@@ -726,7 +726,7 @@ sub new_request {
 
         next if $o{skip_headers}{$key} || !exists $headers->{$key} || !defined $headers->{$key};
 
-        $request->header( $key => $headers->{$key} );
+        $request->header( $key => _encode_if_utf8_flagged( $headers->{$key} ) );
 
         if (my $do = $events->{after_header}{$key}) {
             $self->$do(%o);
@@ -781,9 +781,14 @@ sub _tune_utf8 {
     return $content;
 }
 
+sub _encode_if_utf8_flagged {
+    my ($v) = @_;
+    return utf8::is_utf8($v) ? Encode::encode( utf8 => $v ) : $v;
+}
+
 sub _uri_escape_bytes_or_chars {
     my ($v) = @_;
-    return uri_escape( utf8::is_utf8($v) ? Encode::encode( utf8 => $v ) : $v );
+    return uri_escape( _encode_if_utf8_flagged($v) );
 }
 
 sub convert_data {

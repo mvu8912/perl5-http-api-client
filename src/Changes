@@ -1,4 +1,11 @@
 2026-08-17 - v1.07
+    + fix: header values got no UTF-8 handling at all, unlike body values
+      (fixed for body content just below by HAC-029/031/032) - a wide
+      Unicode header value stayed UTF8-flagged all the way through,
+      producing "Wide character in print" warnings and incorrect bytes
+      when the request was serialized. New _encode_if_utf8_flagged()
+      helper, shared with the body-encoding fixes, applied to header
+      values before they reach HTTP::Request::header() (HAC-034)
     + fix: kvp2str_each's BOOL branch (xTRUE/xFALSE/xTrue/xFalse/xtrue/
       xfalse/xt__e/xf___e) interpolated its value directly into the
       query string with no percent-escaping at all, unlike every other
