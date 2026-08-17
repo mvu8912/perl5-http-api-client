@@ -30,7 +30,7 @@ command above until that's fixed.
  >> PERL5LIB="lib:$PERL5LIB" PERL5OPT=-MDevel::Cover prove -r t
  >> PERL5LIB="lib:$PERL5LIB" cover
 
-Threshold: **75% statement coverage** on `lib/`, tracked per-module. Current baseline (2026-08-17): `HTTP/API/Client.pm` 84.9% statement / 71.6% branch / 45.4% condition, `HTTP/API/DataTypeMarker.pm` 100%. Branch/condition coverage is measured and reported but not gated yet - most of the remaining gap is the custom `engine` code path in `send()`, which isn't exercised by the current test suite (see HAC-010: `_build_ua()` supports a custom engine, but `send()` never actually dispatches through it).
+Threshold: **75% statement coverage** on `lib/`, tracked per-module. Current baseline (2026-08-17): `HTTP/API/Client.pm` 91.7% statement / 75.3% branch / 45.4% condition, `HTTP/API/DataTypeMarker.pm` 100%. Branch/condition coverage is measured and reported but not gated yet - most of the remaining gap is the `DEBUG_*` print paths in `send()` (never exercised by any test) and a few branches that are structurally always-true (e.g. `pre_defined_data` is never falsy, so its `if` guard has no untaken side).
 
 `cover_db/` is a generated artifact - never commit it.
 

@@ -1,4 +1,8 @@
 unreleased
+    + test: coverage added for put()/head()/delete() (never exercised before)
+      and for json_response()/kvp_response()'s actual decode logic (only
+      their empty-input guards had coverage) - no behavior changed, all
+      confirmed already correct (HAC-014, HAC-015)
     + fix: a client configured with an engine other than LWP::UserAgent now
       dies with a clear message instead of crashing later with a confusing
       "is_success on an undefined value" - real custom-engine dispatch is
