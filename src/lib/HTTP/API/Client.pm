@@ -479,7 +479,10 @@ sub json_response {
 sub kvp_response {
     my ($self) = @_;
 
-    my $content = $self->last_response->decoded_content
+    my $response = $self->last_response
+        or return {};
+
+    my $content = $response->decoded_content
         or return {};
 
     my %data = map {
