@@ -237,7 +237,7 @@ use JSON::XS;
 use LWP::UserAgent;
 use Try::Tiny;
 use URI;
-use URI::Escape qw( uri_escape uri_unescape );
+use URI::Escape qw( uri_escape_utf8 uri_unescape );
 use Scalar::Util qw( looks_like_number );
 use HTTP::API::DataTypeMarker;
 
@@ -902,14 +902,14 @@ sub kvp2str_each {
 
     my ($k, $v) = map { _defor($_, '') } @o{qw( key value )};
 
-    $k = uri_escape($k);
+    $k = uri_escape_utf8($k);
 
     if (UNIVERSAL::isa($v, 'CODE')) {
         $v = $self->$v(%o, key => $k);
     }
 
     if (!ref $v) {
-        $v = uri_escape($v);
+        $v = uri_escape_utf8($v);
 
         $v = $v + 0 if looks_like_number($v);
 

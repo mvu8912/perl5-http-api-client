@@ -1,4 +1,13 @@
 2026-08-17 - v1.06
+    + fix: any form-urlencoded request (the GET default, or content_type
+      set explicitly) containing a genuinely wide Unicode character in a
+      key or value - any CJK character, Cyrillic, Greek, emoji - crashed
+      outright instead of encoding. kvp2str_each used URI::Escape's
+      uri_escape(), which only handles codepoints up to 0xFF; switched to
+      uri_escape_utf8(). JSON requests were unaffected (HAC-029)
+    + test: coverage added for _tune_utf8's UTF-8 encoding path, tested
+      directly as it's unreachable through the public API - convert_data()
+      always hands it already byte-encoded content (HAC-028)
     + fix: RETRY_FAIL_STATUS silently dropped any status code after a
       comma-space separator (e.g. "500, 404") - the split didn't trim
       whitespace, so the leading space left on every status but the first
