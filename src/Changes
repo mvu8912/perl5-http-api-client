@@ -1,4 +1,4 @@
-unreleased
+2026-08-17 - v1.05
     + test: coverage added for the DEBUG_* env vars (never exercised before);
       clarified DEBUG_RESPONSE_IF_FAIL's POD - it only narrows DEBUG_IN_OUT/
       DEBUG_RESPONSE, it does nothing by itself (HAC-017, HAC-018)
@@ -6,8 +6,6 @@ unreleased
       callbacks could mutate that same hash - confirmed via Perl's own
       "each() after insertion" undefined-behavior warning. Now iterates a
       keys() snapshot instead (HAC-016)
-
-2026-08-17 - v1.05
     + fix: root Dockerfile never put lib/ on PERL5LIB, so docker run always
       failed at 'use HTTP::API::Client' - verified with a real build+run,
       all tests now pass in the container (HAC-013)
