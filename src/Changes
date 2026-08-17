@@ -2,6 +2,9 @@ unreleased
     + fix: a non-GET request (POST/PUT/DELETE) with application/x-www-form-urlencoded
       content-type and empty data never built an HTTP::Request object and crashed
       in send() - now builds an empty-content request correctly (HAC-004)
+    + fix: send() slept RETRY_DELAY seconds on every failed request even with
+      RETRY_FAIL_RESPONSE=0 (the default, no retries) - now returns immediately
+      when no retry attempt is left (HAC-006)
     + license changed to MIT
     + Devel::Cover wired up as a develop-phase dependency, coverage documented in README
 
