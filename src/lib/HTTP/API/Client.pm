@@ -393,7 +393,8 @@ sub _execute_callbacks {
 
     my $sth = $options{$type};
 
-    while (my ($key, $callback) = each %$sth) {
+    for my $key (keys %$sth) {
+        my $callback = $sth->{$key};
         next if !defined $callback;
         next if !UNIVERSAL::isa($callback, 'CODE');
         $sth->{$key} = $self->$callback(key => $key, %options);
