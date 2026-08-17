@@ -38,6 +38,76 @@ Send a query string to server
 
 At the moment, only support query string and json data in and out
 
+=head1 ATTRIBUTES
+
+All constructor arguments below are also read-write accessors
+(C<< $ua->base_url("http://new-host") >>), except C<engine> which is
+read-only after construction. Several fall back to an environment
+variable (see L</"ENVIRONMENT VARIABLES">) when not passed explicitly.
+
+=over 4
+
+=item base_url
+
+Prefixed onto every C<$path> passed to C<send()> (and the shorthand
+methods). Not set by default - a bare path is used as-is.
+
+=item username / password
+
+HTTP Basic auth credentials. If either is set, Basic auth is used and
+C<auth_token> is ignored. Default from C<HTTP_USERNAME>/C<HTTP_PASSWORD>.
+
+=item auth_token
+
+Sent verbatim as the C<Authorization> header when C<username>/C<password>
+are both unset. Default from C<HTTP_AUTH_TOKEN>.
+
+=item content_type
+
+Forces the request content type. Left unset, GET defaults to
+C<application/x-www-form-urlencoded> and every other method defaults to
+C<application/json; charset=$charset>.
+
+=item charset
+
+Used to build the default JSON content-type header and to decide whether
+UTF-8 byte-encoding is applied to the request body. Default C<utf8>, from
+C<HTTP_CHARSET>.
+
+=item timeout
+
+Request timeout in seconds, passed to the underlying L<LWP::UserAgent>.
+Default C<60>, from C<HTTP_TIMEOUT>.
+
+=item ssl_verify
+
+Passed through as C<verify_hostname> to L<LWP::UserAgent>'s C<ssl_opts>.
+Default off (C<0>), from C<SSL_VERIFY>.
+
+=item pre_defined_data / pre_defined_headers / pre_defined_events
+
+Hashrefs merged underneath the C<%data>/C<%headers>/C<%events> passed to
+each individual call - set once at construction time for values every
+request should carry (an API key, a fixed header, a standing callback),
+then override per-call as needed.
+
+=item engine
+
+Read-only. Defaults to C<"LWP::UserAgent">, the only engine C<send()>
+actually dispatches requests through - C<_build_ua> will call a
+same-named method on a subclass to build an alternate UA object, but
+C<send()> itself does not yet know how to use anything other than
+L<LWP::UserAgent> with it (see C<t/12_unsupported_engine.t>: setting a
+different engine fails with a clear error rather than silently doing
+nothing).
+
+=item last_response
+
+Read-write. The most recent L<HTTP::Response>, set by C<send()> and read by
+L</json_response>/L</kvp_response>. C<undef> until the first request.
+
+=back
+
 =head1 ENVIRONMENT VARIABLES
 
 These enviornment variables expose the controls without changing the existing code.
@@ -117,6 +187,34 @@ a query string via C<kvp2str()> if it is exactly
 C<application/x-www-form-urlencoded>. Any other content type returns an
 empty string for empty data, or dies naming the content type - there is no
 generic way to serialize arbitrary data into an arbitrary content type.
+
+=head2 prepare_request(%options)
+
+Builds the bare L<HTTP::Request> (method, URL, content-type header) and
+applies authentication: C<username>/C<password> take priority and are sent
+as HTTP Basic auth via C<basic_authenticator()>; C<auth_token> is used only
+if neither is set, and is sent as a raw C<Authorization> header value
+verbatim (no C<Bearer> prefix is added for you - include it in the token
+itself if the API expects one). Called by C<new_request()> - there is
+normally no need to call this directly.
+
+=head2 basic_authenticator($request, $username, $password)
+
+Sets HTTP Basic auth on C<$request> via
+C<< $request->headers->authorization_basic >>. Override this in a subclass
+to change how basic auth is applied without touching the rest of request
+building.
+
+=head2 kvp2json(%options) / kvp2str(%options)
+
+The two body encoders C<convert_data> dispatches to. C<kvp2json> walks
+C<%options>'s C<data> hashref and JSON::XS-encodes it, resolving any
+C<CODE> values by calling them and unwrapping L<HTTP::API::DataTypeMarker>
+markers (C<xCSV>/C<xBOOLEAN> and friends) into their JSON form. C<kvp2str>
+does the same but produces a C<key=value&key=value> query string instead,
+with C<xCSV>-marked values joined by commas instead of repeated per key.
+Both respect an C<< $events->{keys} >> callback to control which keys are
+included and in what order.
 
 =cut
 
