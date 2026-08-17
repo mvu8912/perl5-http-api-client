@@ -1,4 +1,11 @@
 2026-08-17 - v1.07
+    + fix: Basic Auth (username/password) crashed outright on a wide
+      Unicode username or password - authorization_basic()'s internal
+      base64 encoding dies on a UTF8-flagged string, and unlike
+      auth_token (fixed by HAC-034) username/password never went
+      through any UTF-8 handling. Reuses _encode_if_utf8_flagged(),
+      completing the sweep across every credential/header/body path
+      (HAC-035)
     + fix: header values got no UTF-8 handling at all, unlike body values
       (fixed for body content just below by HAC-029/031/032) - a wide
       Unicode header value stayed UTF8-flagged all the way through,

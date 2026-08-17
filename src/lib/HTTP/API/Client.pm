@@ -755,7 +755,8 @@ sub prepare_request {
         qw(username password auth_token);
 
     if ($u || $p) {
-        $self->basic_authenticator($request, $u, $p);
+        $self->basic_authenticator( $request,
+            _encode_if_utf8_flagged($u), _encode_if_utf8_flagged($p) );
     }
     elsif ($at) {
         $headers->{authorization} = $at;
