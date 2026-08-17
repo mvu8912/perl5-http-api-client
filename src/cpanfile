@@ -7,3 +7,7 @@ requires "Try::Tiny";
 requires "URI";
 requires "URI::Escape";
 requires "Scalar::Util";
+
+on 'develop' => sub {
+    requires "Devel::Cover";
+};

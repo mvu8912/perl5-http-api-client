@@ -61,10 +61,22 @@ ps. get a list of command of container commands
 
 -=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-===-=
 
+## Coverage ##
+
+ >> cpanm --installdeps --with-develop .
+ >> PERL5LIB="lib:$PERL5LIB" PERL5OPT=-MDevel::Cover prove -r t
+ >> PERL5LIB="lib:$PERL5LIB" cover
+
+Threshold: **75% statement coverage** on `lib/`, tracked per-module. Current baseline (2026-08-17): `HTTP/API/Client.pm` 79.1% statement / 61.5% branch / 39.3% condition, `HTTP/API/DataTypeMarker.pm` 100%. Branch/condition coverage is measured and reported but not gated yet - most of the gap is the custom `engine` code path in `send()`, which isn't exercised by the current test suite (see HAC-004).
+
+`cover_db/` is a generated artifact - never commit it.
+
+-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-===-=
+
 # Developers #
 
  * Michael Vu <email@michael.vu>
 
 # License #
 
-None
+MIT

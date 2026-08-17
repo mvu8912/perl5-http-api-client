@@ -11,3 +11,4 @@ tools/init.log
 HTTP-API-Client-*
 .env
 .tira/
+cover_db/
