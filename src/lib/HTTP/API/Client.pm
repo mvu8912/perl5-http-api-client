@@ -65,6 +65,57 @@ RETRY VARIABLES
  RETRY_FAIL_STATUS    - only retry if specified status code. e.g. 500,404
  RETRY_DELAY          - retry with wait time of ??? seconds in between
 
+=head1 METHODS
+
+=head2 get / post / put / head / delete ($path, \%data, \%headers, \%events)
+
+Shorthand for C<send($METHOD, $path, \%data, \%headers, \%events)>. C<$path>
+is appended to the C<base_url> attribute if one was given. Returns whatever
+C<send()> returns - normally an L<HTTP::Response>.
+
+=head2 send($method, $path, \%data, \%headers, \%events)
+
+Builds and sends one HTTP request, retrying per L</"ENVIRONMENT VARIABLES">
+if configured. C<%data> and C<%headers> are merged over C<pre_defined_data>
+and C<pre_defined_headers>. C<%events> are the per-call callbacks documented
+under C<new_request()> below. Sets and returns the C<last_response>
+attribute.
+
+Passing C<< $events->{test_request_object} = 1 >> makes it return the built
+L<HTTP::Request> instead of sending it - the way this module's own test
+suite inspects what would have gone out.
+
+=head2 json_response
+
+Decode the C<last_response> body as JSON and return the resulting hashref.
+Never dies - a missing response or invalid JSON comes back as
+C<< { status => "error", error => $message } >> instead.
+
+=head2 kvp_response
+
+Parse the C<last_response> body as a C<key=value&key=value> query string
+and return it as a hashref. Returns C<{}> if no request has been made yet,
+or the response body is empty.
+
+=head2 new_request(%options)
+
+Builds the L<HTTP::Request> for one call. This is where the C<%events>
+callbacks passed to C<send()> are read: C<before_headers>, C<headers_keys> /
+C<add_headers_keys> (which header keys to consider, in what order),
+C<before_header>/C<after_header> keyed by header name, and
+C<after_header_keys> - the hooks used to compute things like a signature
+header from other data at build time. See F<t/04_callbacks.t> for a worked
+example (API key + signature).
+
+=head2 convert_data(%options)
+
+Turn C<%options>'s C<data> hashref into the request body, according to
+content type: JSON via C<kvp2json()> if the content type contains C<json>,
+a query string via C<kvp2str()> if it is exactly
+C<application/x-www-form-urlencoded>. Any other content type returns an
+empty string for empty data, or dies naming the content type - there is no
+generic way to serialize arbitrary data into an arbitrary content type.
+
 =cut
 
 use Encode;
