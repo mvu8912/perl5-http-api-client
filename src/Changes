@@ -1,4 +1,8 @@
-unreleased
+2026-08-17 - v1.06
+    + test: coverage added for headers_keys/add_headers_keys/before_header/
+      after_header events (never exercised before), and for auth_token
+      including the documented username/password-wins precedence rule
+      (HAC-021, HAC-023)
     + fix: the not_include event was silently ignored in form-urlencoded
       mode (kvp2str) - it only worked for JSON (kvp2json). A key explicitly
       excluded via not_include still leaked into a form-urlencoded request
