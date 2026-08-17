@@ -1,4 +1,8 @@
 unreleased
+    + fix: the not_include event was silently ignored in form-urlencoded
+      mode (kvp2str) - it only worked for JSON (kvp2json). A key explicitly
+      excluded via not_include still leaked into a form-urlencoded request
+      body (HAC-022)
     + fix: kvp2str_each() silently stringified a nested hash value as
       'HASH(0x...)' in the query string - now dies with a clear message
       naming the key, mirroring the same fix already applied to
