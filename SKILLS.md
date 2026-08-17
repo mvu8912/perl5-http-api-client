@@ -46,6 +46,16 @@ dzil test      # full Makefile.PL-based test run against the built tree
 
 Always run both before touching PAUSE - `dzil build` catches MANIFEST/META problems `prove` alone won't. `MANIFEST.SKIP` already keeps the release tarball source-only (`lib/`, `t/`, `Changes`, `README(.md)`, plus dist.ini-generated `LICENSE`/`Makefile.PL`/`MANIFEST`/`META.yml` - no `Dockerfile`, no `dist.ini`, no dev cruft).
 
+`dzil build`/`dzil test` never leave `HTTP-API-Client-<version>/` or the `.tar.gz` behind on disk - always `rm -rf` them after (they're gitignored but still clutter the working tree, and `dzil release` in particular leaves them sitting there since it doesn't clean up after a successful upload).
+
+**The actual upload** - `dzil release` - never do this without explicit sign-off first, it's irreversible and public. When it's actually time:
+
+```
+DZIL_CONFIRMRELEASE_DEFAULT=yes dzil release
+```
+
+`@Basic` includes `ConfirmRelease`, which prompts interactively before uploading. Piping `y` into stdin does **not** satisfy it - it just aborts with `Aborting release`, no upload attempted. `DZIL_CONFIRMRELEASE_DEFAULT=yes` is the plugin's own documented non-interactive escape hatch. Needs `~/.pause` (or `PAUSE_USER`/`PAUSE_PASS` env vars - `CPAN::Uploader` reads those directly) for credentials. A successful run ends with `PAUSE add message sent ok [200]`.
+
 **Before any real `dzil release` / PAUSE upload**, check the board (see below) for an open ticket blocking indexing - PAUSE user `MICVU` held first-come indexing permission on this distribution from 2016-2021 releases (since deleted) and any upload will fail to index again until that's resolved with Michael Vu directly.
 
 ## The Tira board
