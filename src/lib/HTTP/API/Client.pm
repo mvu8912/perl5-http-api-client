@@ -525,6 +525,9 @@ sub new_request {
         $request = $self->prepare_request(%o);
         $request->content($content);
     }
+    else {
+        $request = $self->prepare_request(%o);
+    }
 
     %o = (%o,
         request => $request,
