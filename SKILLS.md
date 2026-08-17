@@ -16,6 +16,13 @@ cd src
 PERL5LIB=lib prove -r t
 ```
 
+Or in Docker, matching the root `Dockerfile` exactly:
+
+```
+docker build -t http-api-client .
+docker run --rm http-api-client
+```
+
 ## Coverage
 
 ```
