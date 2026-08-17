@@ -927,10 +927,8 @@ sub kvp2str_each {
         }
     }
     elsif (ref $v eq 'BOOL') {
-        return ref $v->[0] eq 'SCALAR'
-            ? "$k=${$v->[0]}"
-            : "$k=$v->[0]";
-
+        my $bool_value = ref $v->[0] eq 'SCALAR' ? ${$v->[0]} : $v->[0];
+        return "$k=" . _uri_escape_bytes_or_chars($bool_value);
     }
     elsif (ref $v eq 'ARRAY') {
         my @parts;

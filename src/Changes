@@ -1,4 +1,11 @@
 2026-08-17 - v1.07
+    + fix: kvp2str_each's BOOL branch (xTRUE/xFALSE/xTrue/xFalse/xtrue/
+      xfalse/xt__e/xf___e) interpolated its value directly into the
+      query string with no percent-escaping at all, unlike every other
+      branch. A value containing '&' or '=' - reachable since xBOOLEAN's
+      own POD documents it as accepting any plain scalar, not just
+      boolean-safe strings - corrupted the query string by introducing
+      extra params (HAC-033)
     + fix: the JSON path (kvp2json/kvp2json_each) had the same class of
       bug as HAC-031, just below - JSON::XS's utf8 mode unconditionally
       re-encodes string values, which double-encodes a value that is
