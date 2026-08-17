@@ -876,6 +876,7 @@ sub kvp2str {
     my @parts;
 
     foreach my $key(@keys) {
+        next if $events->{not_include}{$key};
         next if $o{skip_key}{$key} || !exists $data->{$key} || !defined $data->{$key};
         push @parts, $self->kvp2str_each(%o, key => $key, value => $data->{$key});
     }
