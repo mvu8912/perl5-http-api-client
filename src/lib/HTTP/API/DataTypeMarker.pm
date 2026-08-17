@@ -51,6 +51,4 @@ sub xf___e {
     return xBOOLEAN('f');
 }
 
-no Moo::Role;
-
 1;
