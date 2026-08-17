@@ -1,4 +1,7 @@
 2026-08-17 - v1.07
+    + docs: added POD for get_content_type/kvp2json_each/kvp2str_each,
+      the only three public methods in Client.pm with none (Pod::Coverage
+      82.3% -> 100%) (HAC-038)
     + fix: before_sorting_keys' keys parameter was always empty on entry,
       and any mutation a callback made to it (add/remove a key before
       sorting) was silently discarded a moment later when @keys got

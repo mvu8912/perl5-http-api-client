@@ -186,6 +186,14 @@ never sets it, and setting it inside an C<%events> callback has no effect
 (a callback receives a snapshot copy of C<%options>, not the one
 C<new_request()> itself is iterating). See F<t/23_skip_headers.t>.
 
+=head2 get_content_type(%options)
+
+Resolves the effective content type for one call: the C<content_type>
+attribute if set explicitly; otherwise C<application/x-www-form-urlencoded>
+for a GET, or C<application/json; charset=$charset> for anything else.
+Called internally by C<convert_data()>, C<prepare_request()>, and
+C<new_request()> - there is normally no need to call this directly.
+
 =head2 convert_data(%options)
 
 Turn C<%options>'s C<data> hashref into the request body, according to
@@ -227,6 +235,16 @@ C<skip_headers> above - only useful from a direct call, e.g. a C<data>
 callback recursively re-invoking C<kvp2str()>/C<kvp2json()> on itself to
 build its own value without infinite-looping on its own key; see
 F<t/04_callbacks.t>) to exclude a key from the encoded body.
+
+=head2 kvp2json_each(%options) / kvp2str_each(%options)
+
+The per-value helpers C<kvp2json()>/C<kvp2str()> recurse into for each key
+via C<%options>'s C<value>. Resolves a C<CODE> value by calling it,
+unwraps L<HTTP::API::DataTypeMarker> markers (C<xCSV>/C<xBOOLEAN> and
+friends), and recurses into plain array/hash values. There is normally
+no need to call these directly - they exist as public methods so a
+C<data>/C<value> callback can recursively re-invoke them on itself (see
+C<kvp2json()>/C<kvp2str()> above).
 
 =head1 LICENSE AND COPYRIGHT
 
