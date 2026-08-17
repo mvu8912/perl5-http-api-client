@@ -1,3 +1,9 @@
+unreleased
+    + fix: kvp2str_each() silently stringified a nested hash value as
+      'HASH(0x...)' in the query string - now dies with a clear message
+      naming the key, mirroring the same fix already applied to
+      convert_data() (HAC-020)
+
 2026-08-17 - v1.05
     + test: coverage added for the DEBUG_* env vars (never exercised before);
       clarified DEBUG_RESPONSE_IF_FAIL's POD - it only narrows DEBUG_IN_OUT/
