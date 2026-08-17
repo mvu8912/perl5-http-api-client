@@ -1,4 +1,10 @@
 2026-08-17 - v1.06
+    + test: coverage added for before_headers and before_sorting_keys/
+      after_sorting_keys events (never exercised before) (HAC-024)
+    + fix: add_headers_keys, following its own documented usage (mutate
+      %headers as a side effect, then return the key), caused that key to
+      be double-counted in new_request()'s @keys - before_header/
+      after_header for that key fired twice instead of once (HAC-025)
     + test: coverage added for headers_keys/add_headers_keys/before_header/
       after_header events (never exercised before), and for auth_token
       including the documented username/password-wins precedence rule

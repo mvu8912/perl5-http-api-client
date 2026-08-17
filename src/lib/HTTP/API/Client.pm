@@ -700,7 +700,8 @@ sub new_request {
         @keys = $self->$keys(%o);
     }
     elsif (my $add = $events->{add_headers_keys}) {
-        @keys = sort $self->$add(%o), keys %$headers;
+        my %seen;
+        @keys = sort grep { !$seen{$_}++ } $self->$add(%o), keys %$headers;
     }
     else {
         @keys = sort keys %$headers;
