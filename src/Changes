@@ -1,4 +1,10 @@
 2026-08-17 - v1.07
+    + fix: before_sorting_keys' keys parameter was always empty on entry,
+      and any mutation a callback made to it (add/remove a key before
+      sorting) was silently discarded a moment later when @keys got
+      unconditionally reassigned from keys %data. Unlike after_sorting_keys,
+      whose keys mutations are genuinely live, before_sorting_keys was
+      functionally inert for this purpose (HAC-037)
     + fix: CPANTS Core Kwalitee was 93.75% (6 failing metrics) - added a
       LICENSE AND COPYRIGHT POD section to Client.pm, declared
       HTTP::Headers/HTTP::Request as runtime prereqs and HTTP::Request/

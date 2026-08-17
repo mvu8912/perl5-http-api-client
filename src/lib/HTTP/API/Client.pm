@@ -916,7 +916,7 @@ sub kvp2str {
 
     my ($data, $events) = @o{qw(data events)};
 
-    my @keys;
+    my @keys = keys %$data;
 
     if (my $do = $events->{before_sorting_keys}) {
         $self->$do(%o, keys => \@keys);
@@ -926,7 +926,7 @@ sub kvp2str {
         @keys = $self->$do(%o);
     }
     else {
-        @keys = sort keys %$data;
+        @keys = sort @keys;
     }
 
     if (my $do = $events->{after_sorting_keys}) {
