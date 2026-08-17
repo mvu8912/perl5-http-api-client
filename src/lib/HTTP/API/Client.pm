@@ -445,17 +445,12 @@ sub send {
             next RETRY;
         }
 
-        my $pattern = $retry_status{ $response->code }
+        $retry_status{ $response->code }
           or
-          last RETRY;  ## no retry pattern for this status code, just stop retry
+          last RETRY;  ## status code not in RETRY_FAIL_STATUS, just stop retry
 
-        ## retry if pattern is match otherwise, just stop retry
-        if ( $response->decode_content =~ /$pattern/ ) {
-            sleep $retry_delay;
-            next RETRY;
-        }
-
-        last RETRY;
+        sleep $retry_delay;
+        next RETRY;
     }
 
     return $self->last_response($response);
