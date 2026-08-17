@@ -1,11 +1,9 @@
-unreleased
+2026-08-17 - v1.05
     + fix: kvp_response() crashed if called before any request was made -
       now returns {} like json_response() already did (HAC-007)
     + fix: convert_data() silently stringified a data hashref as 'HASH(0x...)'
       for any content_type other than json/form-urlencoded - now returns an
       empty body for empty data, dies with a clear message otherwise (HAC-008)
-
-2026-08-17 - v1.05
     + fix: a non-GET request (POST/PUT/DELETE) with application/x-www-form-urlencoded
       content-type and empty data never built an HTTP::Request object and crashed
       in send() - now builds an empty-content request correctly (HAC-004)
