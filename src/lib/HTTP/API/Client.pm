@@ -632,7 +632,8 @@ sub convert_data {
         return $self->kvp2str(%o);
     }
     else {
-        return $data;
+        return '' if !%$data;
+        die "Unable to convert data for content_type: $content_type";
     }
 }
 
