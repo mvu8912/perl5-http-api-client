@@ -944,6 +944,9 @@ sub kvp2str_each {
 
         return $csv;
     }
+    elsif (UNIVERSAL::isa($v, 'HASH')) {
+        die "Unable to convert nested hash value for key '$k' into a form-urlencoded query string";
+    }
 
     return $v;
 }
