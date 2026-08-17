@@ -1,3 +1,10 @@
+=head1 NAME
+
+09_kvp_response.t - regression test for HAC-007: kvp_response() must return
+{} instead of crashing when called before any request has been made
+
+=cut
+
 use strict;
 use warnings;
 use Test::More;

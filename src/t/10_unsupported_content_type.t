@@ -1,3 +1,12 @@
+=head1 NAME
+
+10_unsupported_content_type.t - regression tests for HAC-008: convert_data()
+must return an empty body for empty data, and die with a clear message for
+non-empty data, instead of silently stringifying the data hashref, when
+content_type is neither JSON nor form-urlencoded
+
+=cut
+
 use strict;
 use warnings;
 use Test::More;

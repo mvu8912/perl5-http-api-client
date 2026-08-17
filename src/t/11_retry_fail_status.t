@@ -1,3 +1,11 @@
+=head1 NAME
+
+11_retry_fail_status.t - regression tests for HAC-009: RETRY_FAIL_STATUS
+must retry without crashing when the response status code matches, and
+must not retry when it doesn't
+
+=cut
+
 use strict;
 use warnings;
 use Test::More;

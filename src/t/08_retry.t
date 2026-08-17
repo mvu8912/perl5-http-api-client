@@ -1,3 +1,11 @@
+=head1 NAME
+
+08_retry.t - regression tests for HAC-006: send() must not sleep
+RETRY_DELAY when no retry attempt is left (the default, RETRY_FAIL_RESPONSE=0),
+but must still sleep/retry once when a real retry is configured
+
+=cut
+
 use strict;
 use warnings;
 use Test::More;

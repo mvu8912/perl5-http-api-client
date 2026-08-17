@@ -1,3 +1,11 @@
+=head1 NAME
+
+07_empty_post.t - regression test for HAC-004: a non-GET request with
+form-urlencoded content-type and empty data must still build a real
+HTTP::Request instead of leaving it undef
+
+=cut
+
 use strict;
 use warnings;
 use Test::More;
