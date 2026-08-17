@@ -842,6 +842,7 @@ sub kvp2json_each {
     }
 
     if (!ref $v) {
+        $v = Encode::decode( utf8 => $v ) if !utf8::is_utf8($v);
         return looks_like_number($v) ? $v+0 : $v;
     }
     elsif (ref $v eq 'BOOL') {

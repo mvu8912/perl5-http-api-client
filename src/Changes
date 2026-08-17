@@ -1,4 +1,10 @@
 2026-08-17 - v1.07
+    + fix: the JSON path (kvp2json/kvp2json_each) had the same class of
+      bug as HAC-031, just below - JSON::XS's utf8 mode unconditionally
+      re-encodes string values, which double-encodes a value that is
+      already raw UTF-8 bytes, producing mojibake in the JSON body. Now
+      decodes any non-UTF8-flagged string value before it reaches
+      JSON::XS (HAC-032)
     + fix: HAC-029's uri_escape_utf8() fix (below, v1.06) double-encoded a
       value that was already raw UTF-8 bytes (utf8::is_utf8 false - the
       common shape for data read from a file/DB/API without being
