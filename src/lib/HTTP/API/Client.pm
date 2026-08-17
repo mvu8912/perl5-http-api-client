@@ -436,6 +436,9 @@ sub send {
         last RETRY    ## request is success, not further for retry
           if $response->is_success;
 
+        last RETRY    ## no attempts left, don't sleep for a retry that won't happen
+          if $retry >= $retry_count;
+
         if ( !%retry_status ) {
             sleep $retry_delay;
             ## no retry pattern at all then just retry
