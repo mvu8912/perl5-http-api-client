@@ -1,4 +1,10 @@
 2026-08-17 - v1.07
+    + fix: CPANTS Core Kwalitee was 93.75% (6 failing metrics) - added a
+      LICENSE AND COPYRIGHT POD section to Client.pm, declared
+      HTTP::Headers/HTTP::Request as runtime prereqs and HTTP::Request/
+      HTTP::Response as test-phase prereqs in cpanfile (both used but
+      previously undeclared), declared a minimum perl version, and added
+      [MetaJSON] to dist.ini so the release includes META.json (HAC-036)
     + fix: Basic Auth (username/password) crashed outright on a wide
       Unicode username or password - authorization_basic()'s internal
       base64 encoding dies on a UTF8-flagged string, and unlike

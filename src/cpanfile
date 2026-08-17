@@ -1,4 +1,7 @@
+requires "perl", "5.010";
 requires "Encode";
+requires "HTTP::Headers";
+requires "HTTP::Request";
 requires "JSON::XS";
 requires "LWP::Protocol::https";
 requires "LWP::UserAgent";
@@ -7,6 +10,11 @@ requires "Try::Tiny";
 requires "URI";
 requires "URI::Escape";
 requires "Scalar::Util";
+
+on 'test' => sub {
+    requires "HTTP::Request";
+    requires "HTTP::Response";
+};
 
 on 'develop' => sub {
     requires "Devel::Cover";
