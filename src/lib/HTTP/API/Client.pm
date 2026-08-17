@@ -179,6 +179,13 @@ C<after_header_keys> - the hooks used to compute things like a signature
 header from other data at build time. See F<t/04_callbacks.t> for a worked
 example (API key + signature).
 
+C<%options> also accepts C<skip_headers>, a hashref of header names to
+exclude from the request no matter what C<%headers> or the events above
+say. Only reachable by calling C<new_request()> directly with it - C<send()>
+never sets it, and setting it inside an C<%events> callback has no effect
+(a callback receives a snapshot copy of C<%options>, not the one
+C<new_request()> itself is iterating). See F<t/23_skip_headers.t>.
+
 =head2 convert_data(%options)
 
 Turn C<%options>'s C<data> hashref into the request body, according to
@@ -214,7 +221,12 @@ markers (C<xCSV>/C<xBOOLEAN> and friends) into their JSON form. C<kvp2str>
 does the same but produces a C<key=value&key=value> query string instead,
 with C<xCSV>-marked values joined by commas instead of repeated per key.
 Both respect an C<< $events->{keys} >> callback to control which keys are
-included and in what order.
+included and in what order, and both accept a C<skip_key> hashref in
+C<%options> (same reachability caveat as C<new_request()>'s
+C<skip_headers> above - only useful from a direct call, e.g. a C<data>
+callback recursively re-invoking C<kvp2str()>/C<kvp2json()> on itself to
+build its own value without infinite-looping on its own key; see
+F<t/04_callbacks.t>) to exclude a key from the encoded body.
 
 =cut
 
