@@ -57,7 +57,9 @@ DEBUG VARIABLES
  DEBUG_SEND_OUT             - print out request in string to STDERR
  DEBUG_RESPONSE             - print out response in string to STDERR
  DEBUG_RESPONSE_HEADER_ONLY - print out response header only without the body
- DEBUG_RESPONSE_IF_FAIL     - only print out response in string if fail.
+ DEBUG_RESPONSE_IF_FAIL     - narrows DEBUG_IN_OUT/DEBUG_RESPONSE to only print
+                              on a failed response. Does nothing by itself -
+                              DEBUG_IN_OUT or DEBUG_RESPONSE must also be set.
 
 RETRY VARIABLES
 
