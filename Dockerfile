@@ -1,4 +1,4 @@
-FROM michaelpc/openshift:latest 
+FROM perl:latest
 
 USER root
 
