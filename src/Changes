@@ -1,3 +1,9 @@
+unreleased
+    + fix: RETRY_FAIL_STATUS crashed (wrong method name, decode_content vs
+      decoded_content) any time it was actually used - the body-pattern-match
+      it was trying to do was never wired up either, retry now happens purely
+      on status-code match as the POD has always documented (HAC-009)
+
 2026-08-17 - v1.05
     + fix: kvp_response() crashed if called before any request was made -
       now returns {} like json_response() already did (HAC-007)
