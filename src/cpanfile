@@ -1,0 +1,9 @@
+requires "Encode";
+requires "JSON::XS";
+requires "LWP::Protocol::https";
+requires "LWP::UserAgent";
+requires "Moo";
+requires "Try::Tiny";
+requires "URI";
+requires "URI::Escape";
+requires "Scalar::Util";

@@ -1,0 +1,62 @@
+2021-03-31 - v1.03
+    + use lazy builder, so the sub classes can just overwrite the _build_ sub instead of using default => sub {}
+
+2021-03-31 - v1.02
+    + convert number in the request
+    + added data type markers
+        + json true  = xTRUE()
+        + json false = xFALSE()
+        + cgi param true  = xTRUE()  => "1"
+        + cgi param false = xFALSE() => "0"
+        + cgi param true  = xTrue()  => "True" 
+        + cgi param false = xFalse() => "False"
+        + cgi param true  = xtrue()  => "true" 
+        + cgi param false = xfalse() => "false"
+        + cgi param true  = xt__e()  => "t"    
+        + cgi param false = xf___e() => "f"    
+        + cgi param csv list = %a = (a => xCSV(1,2,3,4)) => "a=1,2,3,4"
+                   otherwise = %b = (b => [1,2,3,4])     => "b=1&b=2&b=3&b=4"
+
+2021-03-31 - v1.01
+    + Enchance key value pairs representing on the cgi params
+
+2021-03-31 - v1.0
+    + improve readibility
+    + improve the logic path
+    + adding events to manipulate the logic flow
+    + change some private methods to public methods
+    + Change OOP Framework to Moo
+
+2021-02-25 - v0.09
+    + the data and header can be using callback function to make it more dynamic
+
+2018-09-24 - v0.08 / v0.07
+    + Bugfix pre defined headers and parameters
+
+2017-08-10 - v0.06
+    + You can pre defined parameters during object construction
+    + You can pre defined headers during object construction
+
+2015-01-20 - v0.04
+    + Update POD
+    + Remove unwanted perltidy message
+
+2015-01-20 - v0.04
+    + Fix test
+
+2015-01-19 - 0.03
+    + Add ENVIRONMENT VARIABLE usage
+
+2015-01-18 - 0.02
+    + Cleanup
+
+2015-01-18 - 0.01
+    + First version
+
+
+2021-04-27 - v1.04
+    + New event to not include keys that is defined in the request
+
+    + Simplified the cpan module dep
+
+    + Refresh the tests
