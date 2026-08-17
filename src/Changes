@@ -1,3 +1,9 @@
+unreleased
+    + fix: _execute_callbacks() used each() on the data/headers hash while
+      callbacks could mutate that same hash - confirmed via Perl's own
+      "each() after insertion" undefined-behavior warning. Now iterates a
+      keys() snapshot instead (HAC-016)
+
 2026-08-17 - v1.05
     + fix: root Dockerfile never put lib/ on PERL5LIB, so docker run always
       failed at 'use HTTP::API::Client' - verified with a real build+run,
