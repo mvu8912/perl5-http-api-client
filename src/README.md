@@ -16,11 +16,10 @@ Locally (needs a system Perl with the cpanfile deps installed):
  >> cpanm --installdeps .
  >> PERL5LIB=lib prove -r t
 
-There is a root `Dockerfile` for a containerized run, but as of this writing
-`docker build -t http-api-client . && docker run --rm http-api-client` fails
-with `Can't locate HTTP/API/Client.pm in @INC` - the image never puts `lib`
-on `PERL5LIB`/`@INC`, only installs the cpanfile dependencies. Use the local
-command above until that's fixed.
+In Docker (matches CI - the root Dockerfile runs the same suite):
+
+ >> docker build -t http-api-client .
+ >> docker run --rm http-api-client
 
 -=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-===-=
 
