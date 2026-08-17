@@ -457,6 +457,9 @@ sub send {
 
             $response = $ua->request($req);
         }
+        else {
+            die "Unsupported engine: $eng - only LWP::UserAgent is currently wired up in send()";
+        }
 
         if ( $debug{in_out} || $debug{send_out} ) {
             print STDERR "-- REQUEST --\n";
