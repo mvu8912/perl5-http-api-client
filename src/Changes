@@ -1,4 +1,4 @@
-unreleased
+2026-08-17 - v1.05
     + test: coverage added for put()/head()/delete() (never exercised before)
       and for json_response()/kvp_response()'s actual decode logic (only
       their empty-input guards had coverage) - no behavior changed, all
@@ -7,8 +7,6 @@ unreleased
       dies with a clear message instead of crashing later with a confusing
       "is_success on an undefined value" - real custom-engine dispatch is
       still an open design question, not decided here (HAC-010)
-
-2026-08-17 - v1.05
     + fix: RETRY_FAIL_STATUS crashed (wrong method name, decode_content vs
       decoded_content) any time it was actually used - the body-pattern-match
       it was trying to do was never wired up either, retry now happens purely
