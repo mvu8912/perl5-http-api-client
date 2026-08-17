@@ -1,3 +1,13 @@
+2026-08-17 - v1.07
+    + fix: HAC-029's uri_escape_utf8() fix (below, v1.06) double-encoded a
+      value that was already raw UTF-8 bytes (utf8::is_utf8 false - the
+      common shape for data read from a file/DB/API without being
+      explicitly Encode::decode'd), producing mojibake instead of correct
+      percent-encoding. A genuine Unicode character string still encodes
+      correctly. New _uri_escape_bytes_or_chars() helper only encodes
+      when the input is actually UTF8-flagged, mirroring _tune_utf8's own
+      detect-then-encode approach (HAC-031)
+
 2026-08-17 - v1.06
     + fix: any form-urlencoded request (the GET default, or content_type
       set explicitly) containing a genuinely wide Unicode character in a
