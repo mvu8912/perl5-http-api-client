@@ -1,4 +1,7 @@
 unreleased
+    + test: coverage added for the DEBUG_* env vars (never exercised before);
+      clarified DEBUG_RESPONSE_IF_FAIL's POD - it only narrows DEBUG_IN_OUT/
+      DEBUG_RESPONSE, it does nothing by itself (HAC-017, HAC-018)
     + fix: _execute_callbacks() used each() on the data/headers hash while
       callbacks could mutate that same hash - confirmed via Perl's own
       "each() after insertion" undefined-behavior warning. Now iterates a

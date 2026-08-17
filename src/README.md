@@ -29,7 +29,7 @@ In Docker (matches CI - the root Dockerfile runs the same suite):
  >> PERL5LIB="lib:$PERL5LIB" PERL5OPT=-MDevel::Cover prove -r t
  >> PERL5LIB="lib:$PERL5LIB" cover
 
-Threshold: **75% statement coverage** on `lib/`, tracked per-module. Current baseline (2026-08-17): `HTTP/API/Client.pm` 91.7% statement / 75.3% branch / 45.4% condition, `HTTP/API/DataTypeMarker.pm` 100%. Branch/condition coverage is measured and reported but not gated yet - most of the remaining gap is the `DEBUG_*` print paths in `send()` (never exercised by any test) and a few branches that are structurally always-true (e.g. `pre_defined_data` is never falsy, so its `if` guard has no untaken side).
+Threshold: **75% statement coverage** on `lib/`, tracked per-module. Current baseline (2026-08-17): `HTTP/API/Client.pm` 94.2% statement / 80.6% branch / 57.5% condition, `HTTP/API/DataTypeMarker.pm` 100%. Branch/condition coverage is measured and reported but not gated yet - most of the remaining gap is branches that are structurally always-true (e.g. `pre_defined_data` is never falsy, so its `if` guard has no untaken side) rather than genuinely missing scenarios.
 
 `cover_db/` is a generated artifact - never commit it.
 
