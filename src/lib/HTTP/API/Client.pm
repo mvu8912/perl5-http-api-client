@@ -388,7 +388,7 @@ sub _build_retry {
     my ($self) = @_;
     my %retry  = %{ _defor($self->retry_config, {}) };
     my $count  = $retry{fail_response};
-    my %status = map { $_ => 1 } split /,/, $retry{fail_status};
+    my %status = map { s/^\s+|\s+$//g; $_ => 1 } split /,/, $retry{fail_status};
 
     my $delay = $retry{delay};
 

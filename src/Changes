@@ -1,4 +1,12 @@
 2026-08-17 - v1.06
+    + fix: RETRY_FAIL_STATUS silently dropped any status code after a
+      comma-space separator (e.g. "500, 404") - the split didn't trim
+      whitespace, so the leading space left on every status but the first
+      never matched the response code and that status silently never
+      retried (HAC-027)
+    + test: coverage added for skip_headers/skip_key (new_request/
+      kvp2json/kvp2str), previously undocumented and, for skip_headers,
+      untested (HAC-026)
     + test: coverage added for before_headers and before_sorting_keys/
       after_sorting_keys events (never exercised before) (HAC-024)
     + fix: add_headers_keys, following its own documented usage (mutate
