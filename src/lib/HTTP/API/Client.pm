@@ -72,7 +72,9 @@ C<application/json; charset=$charset>.
 
 Used to build the default JSON content-type header and to decide whether
 UTF-8 byte-encoding is applied to the request body. Default C<utf8>, from
-C<HTTP_CHARSET>.
+C<HTTP_CHARSET>. Must be a real L<JSON::XS> charset method name (C<utf8>,
+C<latin1>, C<ascii>, ...) - an invalid value dies immediately and clearly,
+naming the bad value, the first time JSON encoding is needed.
 
 =item timeout
 

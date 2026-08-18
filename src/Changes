@@ -1,4 +1,6 @@
 2026-08-18 - v1.08
+    + docs: charset attribute POD now names valid values and the
+      HAC-046 invalid-value error behavior (HAC-047)
     + fix: an invalid charset value (e.g. a typo in HTTP_CHARSET) was
       silently swallowed by _build_json's eval, leaving JSON encoding
       without byte-encoding forced - a JSON request with any non-ASCII
