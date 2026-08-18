@@ -9,24 +9,11 @@ status after a space-separated comma never matched $response->code
 
 use strict;
 use warnings;
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use Test::More;
 use HTTP::API::Client;
-use HTTP::Response;
-use HTTP::Request;
-
-package FakeUA;
-sub new { bless { code => $_[1], calls => 0 }, $_[0] }
-sub agent {}
-sub timeout {}
-sub request {
-    my ($self) = @_;
-    $self->{calls}++;
-    my $r = HTTP::Response->new($self->{code});
-    $r->request(HTTP::Request->new(GET => "http://x/"));
-    return $r;
-}
-
-package main;
+use FakeUA;
 
 {
     local $ENV{RETRY_FAIL_RESPONSE} = 1;
