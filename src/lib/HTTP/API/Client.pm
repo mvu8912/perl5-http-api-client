@@ -334,9 +334,11 @@ building.
 
 The two body encoders C<convert_data> dispatches to. C<kvp2json> walks
 C<%options>'s C<data> hashref and JSON::XS-encodes it, resolving any
-C<CODE> values by calling them and unwrapping L<HTTP::API::DataTypeMarker>
-markers (C<xCSV>/C<xBOOLEAN> and friends) into their JSON form. C<kvp2str>
-does the same but produces a C<key=value&key=value> query string instead,
+C<CODE> values by calling them and unwrapping L<HTTP::API::DataTypeMarker>'s
+C<xBOOLEAN>-family markers into their JSON form; an C<xCSV>-marked value
+has no special JSON handling and just JSON-encodes as an ordinary array
+(there's no C<key=value&key=value> repetition problem in JSON for it to
+solve). C<kvp2str> produces a C<key=value&key=value> query string instead,
 with C<xCSV>-marked values joined by commas instead of repeated per key.
 Both respect an C<< $events->{keys} >> callback to control which keys are
 included and in what order, and both accept a C<skip_key> hashref in
@@ -349,11 +351,13 @@ F<t/04_callbacks.t>) to exclude a key from the encoded body.
 =head2 kvp2json_each(%options) / kvp2str_each(%options)
 
 The per-value helpers C<kvp2json()>/C<kvp2str()> recurse into for each key
-via C<%options>'s C<value>. Resolves a C<CODE> value by calling it,
-unwraps L<HTTP::API::DataTypeMarker> markers (C<xCSV>/C<xBOOLEAN> and
-friends), and recurses into plain array/hash values. There is normally
-no need to call these directly - they exist as public methods so a
-C<data>/C<value> callback can recursively re-invoke them on itself (see
+via C<%options>'s C<value> (and, for a top-level field, C<key> - the
+field's own key, available to a C<CODE> value's callback via C<%options>
+in both encoders alike). Resolves a C<CODE> value by calling it, unwraps
+L<HTTP::API::DataTypeMarker> markers (C<xCSV>/C<xBOOLEAN> and friends),
+and recurses into plain array/hash values. There is normally no need to
+call these directly - they exist as public methods so a C<data>/C<value>
+callback can recursively re-invoke them on itself (see
 C<kvp2json()>/C<kvp2str()> above).
 
 These two are not symmetric on invalid input: C<kvp2json_each> dies if a
@@ -1020,7 +1024,7 @@ sub kvp2json {
             next
         }
         next if _should_skip_key(%o, key => $key);
-        $data{$key} = $self->kvp2json_each(%o, value => $data->{$key});
+        $data{$key} = $self->kvp2json_each(%o, key => $key, value => $data->{$key});
     }
 
     return $self->json->encode(\%data);

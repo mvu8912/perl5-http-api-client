@@ -1,3 +1,23 @@
+2026-08-18 - v1.12
+    + docs: DataTypeMarker.pm's DESCRIPTION and Client.pm's kvp2json POD
+      both claimed kvp2json_each special-cases xCSV the same way
+      kvp2str_each does. It doesn't - a CSV-blessed arrayref satisfies
+      Perl's reftype-based ARRAY check regardless of blessing, so it
+      falls through to the generic array branch and JSON-encodes as a
+      plain array (xCSV(1,2,3) becomes [1,2,3]), which is the natural
+      JSON representation anyway - form-urlencoded's one-key-per-element
+      problem that CSV's comma-join solves doesn't exist in JSON. Only
+      BOOL markers are genuinely special-cased by both encoders. Fixed
+      the docs to match the (correct) actual behavior rather than
+      changing working code to match an overclaim (HAC-063)
+    + fix: kvp2json() never passed a top-level field's own key into %o
+      for a CODE-valued field's callback, unlike kvp2str() which passes
+      key => $k - a callback nested inside JSON-encoded data couldn't
+      see its own key even though the identical callback could via the
+      form-urlencoded path. Same class of two-encoders-drift as
+      HAC-059/060/061, here in the callback mechanism rather than
+      array/CSV encoding (HAC-064)
+
 2026-08-18 - v1.11
     + fix: kvp2json_each silently substituted U+FFFD replacement
       characters into the JSON body for any data value that was raw

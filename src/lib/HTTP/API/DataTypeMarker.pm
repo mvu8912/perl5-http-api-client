@@ -18,11 +18,18 @@ type, since Perl scalars have no native boolean and no native "comma list"
 =head1 DESCRIPTION
 
 Every value here is a blessed arrayref - either C<BOOL> (from L</"xBOOLEAN($value)">)
-or C<CSV> (from L</"xCSV(@values)">) - that HTTP::API::Client's C<kvp2json_each> and
-C<kvp2str_each> recognize and serialize specially instead of treating as a
-plain array. Marking a value is the only way to control how it is written,
-since a bare Perl scalar (C<1>, C<0>, C<"true">, ...) is always ambiguous
-about whether it means a JSON boolean, a string, or a number.
+or C<CSV> (from L</"xCSV(@values)">). C<BOOL> is recognized and unwrapped
+specially by both C<kvp2json_each> and C<kvp2str_each>, since a bare Perl
+scalar (C<1>, C<0>, C<"true">, ...) is always ambiguous about whether it
+means a JSON boolean, a string, or a number. C<CSV> is only special-cased
+by C<kvp2str_each>, which joins it into one comma-separated
+C<key=value,value> instead of a key repeated per element - a
+form-urlencoded-specific problem JSON doesn't have. C<kvp2json_each> has
+no C<CSV> handling at all; a blessed C<CSV> arrayref satisfies Perl's
+reftype-based C<ARRAY> check regardless of blessing, so it falls through
+to the plain-array branch and JSON-encodes as an ordinary array
+(C<xCSV(1,2,3)> becomes C<[1,2,3]>) - which is the natural JSON
+representation of a list anyway.
 
 =cut
 
