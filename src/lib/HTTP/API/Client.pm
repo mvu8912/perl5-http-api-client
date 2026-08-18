@@ -187,6 +187,23 @@ set when running the installed CPAN release (Dist::Zilla's
 C<[PkgVersion]> plugin injects it at build time), so a development
 checkout reports C<"HTTP API Client vdev"> instead.
 
+=item retry_config
+
+Read-write hashref C<< { fail_response => $n, fail_status => $csv, delay
+=> $seconds } >>. The programmatic equivalent of
+C<RETRY_FAIL_RESPONSE>/C<RETRY_FAIL_STATUS>/C<RETRY_DELAY> - set this
+directly to configure retry behavior at construction without touching
+process environment variables. See L</"ENVIRONMENT VARIABLES"> for what
+each key does.
+
+=item json
+
+Read-write. The L<JSON::XS> instance C<kvp2json()> encodes through,
+built lazily with C<->canonical->allow_nonref> and the C<charset>
+method applied. Set this directly to inject a differently-configured
+instance (e.g. one with C<->allow_blessed> enabled) instead of the
+default.
+
 =back
 
 =head1 ENVIRONMENT VARIABLES

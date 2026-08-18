@@ -1,4 +1,7 @@
 2026-08-18 - v1.09
+    + docs: added ATTRIBUTES entries for retry_config and json - real,
+      working programmatic alternatives to the env-var-only retry and
+      JSON encoding config, previously undocumented (HAC-052)
     + docs: added a DESCRIPTION section explaining why this module
       exists (repetitive signed-API-request boilerplate) and when
       LWP::UserAgent/HTTP::Tiny are simpler choices instead, plus a
