@@ -1,4 +1,9 @@
 2026-08-18 - v1.08
+    + fix: send() defaulted $data/$headers/$events when omitted but not
+      $path - calling get()/post()/etc with no path argument (a plausible
+      pattern when base_url is meant to be the whole target URL) produced
+      a spurious "Use of uninitialized value $path" warning. Now defaults
+      $path via _defor(), matching the other three optional args (HAC-041)
     + refactor: kvp2json and kvp2str duplicated the exact same skip-key
       guard verbatim - the same shape of duplication that caused HAC-020
       (the two encoders silently drifting out of sync). Extracted into a

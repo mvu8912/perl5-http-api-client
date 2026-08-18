@@ -571,6 +571,7 @@ sub send {
         $data, $headers, $events) = @_;
 
     $method  = uc $method;
+    $path    = _defor( $path,    '' );
     $data    = _defor( $data,    {} );
     $headers = _defor( $headers, {} );
     $events  = _defor( $events,  {} );
