@@ -197,7 +197,9 @@ Read-write hashref C<< { fail_response => $n, fail_status => $csv, delay
 => $seconds } >>. The programmatic equivalent of
 C<RETRY_FAIL_RESPONSE>/C<RETRY_FAIL_STATUS>/C<RETRY_DELAY> - set this
 directly to configure retry behavior at construction without touching
-process environment variables. See L</"ENVIRONMENT VARIABLES"> for what
+process environment variables. A partial hashref is fine - any key you
+omit falls back to that same env var's default (C<0>/C<''>/C<5>), not to
+the environment variable itself. See L</"ENVIRONMENT VARIABLES"> for what
 each key does.
 
 =item json
@@ -212,7 +214,7 @@ default.
 
 =head1 ENVIRONMENT VARIABLES
 
-These enviornment variables expose the controls without changing the existing code.
+These environment variables expose the controls without changing the existing code.
 
 HTTP VARIABLES
 
@@ -272,7 +274,10 @@ C<< { status => "error", error => $message } >> instead.
 
 Parse the C<last_response> body as a C<key=value&key=value> query string
 and return it as a hashref. Returns C<{}> if no request has been made yet,
-or the response body is empty.
+or the response body is empty. A key that repeats (the shape
+C<kvp2str_each> produces when encoding an array-valued field) decodes to
+an arrayref of every value seen, in order; a key seen once still decodes
+to a plain scalar.
 
 =head2 new_request(%options)
 
@@ -350,6 +355,14 @@ friends), and recurses into plain array/hash values. There is normally
 no need to call these directly - they exist as public methods so a
 C<data>/C<value> callback can recursively re-invoke them on itself (see
 C<kvp2json()>/C<kvp2str()> above).
+
+These two are not symmetric on invalid input: C<kvp2json_each> dies if a
+raw-bytes (non-UTF8-flagged) value is not valid UTF-8, rather than
+silently corrupting it into C<U+FFFD> replacement characters - JSON has
+no way to represent arbitrary bytes. C<kvp2str_each> has no such
+restriction; a query string can carry any byte sequence unescaped-safe
+via percent-encoding, so the same input that dies in the JSON path
+passes through the form-urlencoded path unchanged.
 
 =head1 LICENSE AND COPYRIGHT
 
@@ -545,11 +558,11 @@ has retry => (
 sub _build_retry {
     my ($self) = @_;
     my %retry  = %{ _defor($self->retry_config, {}) };
-    my $count  = $retry{fail_response};
-    $count = 0 if defined $count && looks_like_number($count) && $count < 0;
-    my %status = map { s/^\s+|\s+$//g; $_ => 1 } split /,/, $retry{fail_status};
+    my $count  = _defor( $retry{fail_response}, 0 );
+    $count = 0 if looks_like_number($count) && $count < 0;
+    my %status = map { s/^\s+|\s+$//g; $_ => 1 } split /,/, _defor($retry{fail_status}, '');
 
-    my $delay = $retry{delay};
+    my $delay = _defor( $retry{delay}, 5 );
 
     return {
         count  => $count,
@@ -808,9 +821,17 @@ sub kvp_response {
     my $content = $response->decoded_content
         or return {};
 
-    my %data = map {
-        my ( $k, $v ) = map { uri_unescape($_) } split /=/, $_, 2;
-    } split /&/, $content;
+    my %data;
+    for my $pair ( split /&/, $content ) {
+        my ( $k, $v ) = map { uri_unescape($_) } split /=/, $pair, 2;
+        if ( exists $data{$k} ) {
+            $data{$k} = [ $data{$k} ] unless ref $data{$k} eq 'ARRAY';
+            push @{ $data{$k} }, $v;
+        }
+        else {
+            $data{$k} = $v;
+        }
+    }
 
     return \%data;
 }
@@ -1015,7 +1036,14 @@ sub kvp2json_each {
     }
 
     if (!ref $v) {
-        $v = Encode::decode( utf8 => $v ) if !utf8::is_utf8($v);
+        if (!utf8::is_utf8($v)) {
+            my $decoded = eval { Encode::decode( utf8 => $v, Encode::FB_CROAK ) };
+            die sprintf(
+                "kvp2json_each: value is not valid UTF-8, refusing to silently corrupt it into JSON (raw bytes: %v02x)\n",
+                $v
+            ) if !defined $decoded;
+            $v = $decoded;
+        }
         return looks_like_number($v) ? $v+0 : $v;
     }
     elsif (ref $v eq 'BOOL') {
@@ -1079,9 +1107,9 @@ sub kvp2str {
 sub kvp2str_each {
     my ($self, %o) = @_;
 
-    my ($k, $v) = map { _defor($_, '') } @o{qw( key value )};
+    my ($raw_key, $v) = map { _defor($_, '') } @o{qw( key value )};
 
-    $k = _uri_escape_bytes_or_chars($k);
+    my $k = _uri_escape_bytes_or_chars($raw_key);
 
     if (UNIVERSAL::isa($v, 'CODE')) {
         $v = $self->$v(%o, key => $k);
@@ -1107,7 +1135,7 @@ sub kvp2str_each {
         my @parts;
 
         foreach my $val(@$v) {
-            push @parts, $self->kvp2str_each(%o, key => $k, value => $val, no_key => 0);
+            push @parts, $self->kvp2str_each(%o, key => $raw_key, value => $val, no_key => 0);
         }
 
         return ($o{no_key} ? '&' : '') . join '&', @parts;
@@ -1117,7 +1145,7 @@ sub kvp2str_each {
         my @parts;
 
         foreach my $val(@$v) {
-            my $part = $self->kvp2str_each(%o, key => $k, value => $val, no_key => 1);
+            my $part = $self->kvp2str_each(%o, key => $raw_key, value => $val, no_key => 1);
 
             if ($part =~ m/&/) {
                 push @parts, $part;
@@ -1128,9 +1156,9 @@ sub kvp2str_each {
         }
 
         my $csv = "$k=".join( ',', @csv);
-        
+
         if (@parts) {
-            return join '&', $csv, @parts;
+            return join '&', $csv, map { s/^&//r } @parts;
         }
 
         return $csv;

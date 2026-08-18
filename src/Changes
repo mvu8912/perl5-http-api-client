@@ -1,3 +1,54 @@
+2026-08-18 - v1.11
+    + fix: kvp2json_each silently substituted U+FFFD replacement
+      characters into the JSON body for any data value that was raw
+      bytes but NOT valid UTF-8 (e.g. Latin-1 data from a legacy
+      file/DB), instead of erroring - now dies with a clear message
+      naming the raw bytes involved rather than silently corrupting the
+      value. The form-urlencoded encoder was never affected - only the
+      JSON path assumed all non-UTF8-flagged byte strings were valid
+      UTF-8 (HAC-055)
+    + docs: fixed 'enviornment' typo in ENVIRONMENT VARIABLES POD
+      (HAC-056)
+    + docs: documented that kvp2json_each's HAC-055 invalid-UTF8 die is
+      asymmetric with kvp2str_each, which has no such restriction for
+      the same input (HAC-057)
+    + test: added coverage for new_request()'s GET-with-wrong-content_type
+      die, previously reachable but never exercised by the suite. The
+      sibling die in convert_data() was already covered by
+      t/10_unsupported_content_type.t (HAC-058)
+    + fix: kvp2str_each double-escaped the key of any ARRAY-valued field
+      whose key contained a character uri_escape() touches (space, &, =,
+      %, non-ASCII) - { "a b" => ["x","y"] } produced "a%2520b=..."
+      instead of "a%20b=...", corrupting the outgoing query string. Caused
+      by the ARRAY (and CSV, though masked there by no_key short-
+      circuiting before it could surface) branch recursing with its own
+      already-escaped key instead of the raw one, so the next call's
+      unconditional escape ran twice. Existing tests never caught it
+      because none of their array/CSV-valued keys contained an escapable
+      character (HAC-059)
+    + fix: kvp_response() silently collapsed a repeated query-string key
+      to its last value - decoding "tags=a&tags=b&tags=c" (exactly the
+      shape kvp2str_each's ARRAY branch produces when encoding an
+      array-valued field) returned { tags => 'c' }, losing 'a' and 'b'
+      with no warning. Repeated keys now decode to an arrayref of every
+      value seen, in order; a singleton key still decodes to a plain
+      scalar, unchanged (HAC-060)
+    + fix: kvp2str_each double-ampersanded an ARRAY value nested inside
+      an xCSV(...) list - xCSV(6, 7, [13, 14], 15) encoded to
+      "e=6,7,15&&e=13&e=14" (double &). Decoding that back through this
+      module's own kvp_response() produced a bogus '' => undef key and
+      uninitialized-value warnings - a round-trip data-integrity bug.
+      t/05_kvp.t's existing expected-string literal had the double-&
+      baked in as "expected" rather than catching it (HAC-061)
+    + fix: retry_config set directly with only some keys (e.g. { delay =>
+      10 }) left the omitted keys undef instead of falling back to their
+      documented defaults - an omitted fail_response then hit send()'s
+      own safety-net default of 1, silently turning "0 retries" into 1,
+      and an omitted fail_status produced a spurious "Use of
+      uninitialized value" warning from split(). _build_retry now
+      defaults each key the same way the env-var path already did
+      (HAC-062)
+
 2026-08-18 - v1.10
     + docs: rewrote the USAGE section - the signed-request example (the
       module's stated reason to exist per DESCRIPTION) now leads instead
