@@ -582,6 +582,7 @@ sub send {
     my $ua           = $self->ua;
     my $retry_count  = _defor( $self->retry->{count}, 1 );
     my $retry_delay  = _defor( $self->retry->{delay}, 5 );
+    $retry_delay = 0 if looks_like_number($retry_delay) && $retry_delay < 0;
     my %retry_status = %{ _defor($self->retry->{status}, {}) };
     my %debug        = %{ _defor($self->debug_flags, {}) };
     my $eng          = $self->engine;

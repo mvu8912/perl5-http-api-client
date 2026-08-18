@@ -1,4 +1,8 @@
 2026-08-18 - v1.08
+    + fix: a negative RETRY_DELAY reached sleep() as-is, producing
+      "sleep() with negative argument" on every retry - same class of
+      missing-validation gap as HAC-044, just in the delay rather than
+      the count. Now clamped to a minimum of 0 in send() (HAC-045)
     + fix: a negative retry count (e.g. RETRY_FAIL_RESPONSE=-1) made
       send()/get()/etc silently return undef - Perl's 0..N range is empty
       for a negative N, so the retry loop's body (which builds and sends
