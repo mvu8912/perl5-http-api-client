@@ -1,4 +1,11 @@
 2026-08-18 - v1.08
+    + fix: an invalid charset value (e.g. a typo in HTTP_CHARSET) was
+      silently swallowed by _build_json's eval, leaving JSON encoding
+      without byte-encoding forced - a JSON request with any non-ASCII
+      data then crashed much later with the confusing, unrelated
+      "HTTP::Message content must be bytes" instead of a clear error
+      naming the actual bad charset. Now dies immediately and clearly
+      (HAC-046)
     + fix: a negative RETRY_DELAY reached sleep() as-is, producing
       "sleep() with negative argument" on every retry - same class of
       missing-validation gap as HAC-044, just in the delay rather than

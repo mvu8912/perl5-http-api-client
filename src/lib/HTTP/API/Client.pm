@@ -485,7 +485,7 @@ sub _build_json {
     my ($self)  = @_;
     my $json    = JSON::XS->new->canonical->allow_nonref;
     my $charset = $self->charset;
-    eval { $json->$charset };
+    eval { $json->$charset; 1 } or die "Unsupported charset '$charset': $@";
     return $json;
 }
 
