@@ -1,4 +1,8 @@
 2026-08-18 - v1.08
+    + refactor: kvp2json and kvp2str duplicated the exact same skip-key
+      guard verbatim - the same shape of duplication that caused HAC-020
+      (the two encoders silently drifting out of sync). Extracted into a
+      shared _should_skip_key() helper. No behavior change (HAC-040)
     + test: coverage added for json_response()'s documented "no request
       made yet" behavior (never exercised before) - confirms it already
       matches the POD (HAC-039)

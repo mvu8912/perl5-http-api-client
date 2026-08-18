@@ -835,6 +835,12 @@ sub _tune_utf8 {
     return $content;
 }
 
+sub _should_skip_key {
+    my (%o) = @_;
+    my ($key, $data) = @o{qw(key data)};
+    return $o{skip_key}{$key} || !exists $data->{$key} || !defined $data->{$key};
+}
+
 sub _encode_if_utf8_flagged {
     my ($v) = @_;
     return utf8::is_utf8($v) ? Encode::encode( utf8 => $v ) : $v;
@@ -884,7 +890,7 @@ sub kvp2json {
         if ($events->{not_include}{$key}) {
             next
         }
-        next if $o{skip_key}{$key} || !exists $data->{$key} || !defined $data->{$key};
+        next if _should_skip_key(%o, key => $key);
         $data{$key} = $self->kvp2json_each(%o, value => $data->{$key});
     }
 
@@ -955,7 +961,7 @@ sub kvp2str {
 
     foreach my $key(@keys) {
         next if $events->{not_include}{$key};
-        next if $o{skip_key}{$key} || !exists $data->{$key} || !defined $data->{$key};
+        next if _should_skip_key(%o, key => $key);
         push @parts, $self->kvp2str_each(%o, key => $key, value => $data->{$key});
     }
 
