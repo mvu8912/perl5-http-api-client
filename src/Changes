@@ -1,4 +1,7 @@
 2026-08-18 - v1.08
+    + test: t/08_retry.t also switched to the shared t/lib/FakeUA.pm
+      fixture (HAC-042 follow-up) - it was a strict subset of the shared
+      fixture's behavior. No behavior change (HAC-043)
     + test: t/11_retry_fail_status.t and t/24_retry_fail_status_whitespace.t
       duplicated an identical FakeUA fixture verbatim - extracted into a
       shared t/lib/FakeUA.pm. No behavior change (HAC-042)

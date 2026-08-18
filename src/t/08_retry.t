@@ -8,29 +8,18 @@ but must still sleep/retry once when a real retry is configured
 
 use strict;
 use warnings;
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use Test::More;
 use HTTP::API::Client;
-use HTTP::Response;
-use HTTP::Request;
-
-package FakeUA;
-sub new { bless {}, shift }
-sub agent {}
-sub timeout {}
-sub request {
-    my $r = HTTP::Response->new(500);
-    $r->request(HTTP::Request->new(GET => "http://x/"));
-    return $r;
-}
-
-package main;
+use FakeUA;
 
 {
     local $ENV{RETRY_FAIL_RESPONSE} = 0;
     local $ENV{RETRY_DELAY}         = 5;
 
     my $api = HTTP::API::Client->new;
-    $api->ua(FakeUA->new);
+    $api->ua(FakeUA->new(500));
 
     my $t0 = time;
     $api->get("http://x/");
@@ -44,7 +33,7 @@ package main;
     local $ENV{RETRY_DELAY}         = 1;
 
     my $api = HTTP::API::Client->new;
-    $api->ua(FakeUA->new);
+    $api->ua(FakeUA->new(500));
 
     my $t0 = time;
     $api->get("http://x/");
