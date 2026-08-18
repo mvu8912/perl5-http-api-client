@@ -433,6 +433,14 @@ C<xBOOLEAN>-marked value all honor this identically) so a CSV/array
 element joins as a bare value rather than a spurious embedded
 C<key=value> pair.
 
+Both encoders unwrap an C<xBOOLEAN(\$flag)> live scalar ref to whatever
+C<$flag> currently holds, not just the C<0>/C<1> case C<xTRUE>/C<xFALSE>
+use - a live ref that currently holds exactly C<0> or C<1> still becomes
+a native JSON boolean in C<kvp2json_each> (matching C<xTRUE>/C<xFALSE>),
+but any other live value encodes as its own actual contents in both
+encoders alike, the same way a plain (non-live) C<xBOOLEAN> value
+already did.
+
 =head1 LICENSE AND COPYRIGHT
 
 This software is Copyright (c) 2026 by Michael Vu.
@@ -1137,7 +1145,13 @@ sub kvp2json_each {
         return _numify_if_lossless($v);
     }
     elsif (ref $v eq 'BOOL') {
-        return $v->[0];
+        my $inner = $v->[0];
+        if ( ref $inner eq 'SCALAR'
+            && !( looks_like_number($$inner) && ( $$inner == 0 || $$inner == 1 ) ) )
+        {
+            return _numify_if_lossless($$inner);
+        }
+        return $inner;
     }
     elsif (UNIVERSAL::isa($v, 'ARRAY')) {
         my @parts;

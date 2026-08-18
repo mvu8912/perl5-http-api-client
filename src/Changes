@@ -1,3 +1,18 @@
+2026-08-18 - v1.18
+    + fix: kvp2json_each's BOOL branch unconditionally returned the
+      marker's inner value, which is only safe when that value is
+      exactly \1 or \0 (xTRUE()/xFALSE()'s shape) - JSON::XS's own
+      convention for a native boolean via a scalar ref. xBOOLEAN(\$flag)
+      is documented as a general live-tracking mechanism, not restricted
+      to 0/1 - for any other live value (e.g. xBOOLEAN(\$status) where
+      $status holds "active"), kvp2json_each handed JSON::XS a raw
+      scalar ref it cannot encode at all, dying with "cannot encode
+      reference to scalar ... unless the scalar is 0 or 1". kvp2str_each
+      already dereferenced this exact case correctly. kvp2json_each now
+      matches it: a live ref currently holding exactly 0/1 still gets
+      JSON::XS's native boolean treatment, any other live value
+      dereferences and encodes as its own actual contents (HAC-081)
+
 2026-08-18 - v1.17
     + docs: kvp2str's before_sorting_keys/after_sorting_keys events are
       real, working, and tested (t/21_before_events.t,
