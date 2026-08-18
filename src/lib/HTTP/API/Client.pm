@@ -363,7 +363,7 @@ has browser_id => (
 );
 
 sub _build_browser_id {
-    my $ver = _defor($HTTP::API::Client::VERSION, -1);
+    my $ver = _defor($HTTP::API::Client::VERSION, 'dev');
     return "HTTP API Client v$ver";
 }
 

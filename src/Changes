@@ -1,4 +1,10 @@
 2026-08-18 - v1.08
+    + fix: browser_id's version fallback was -1, producing the
+      nonsensical User-Agent "HTTP API Client v-1" - $VERSION is only
+      set by Dist::Zilla's [PkgVersion] plugin at build time, so this
+      fallback fired for every non-CPAN-installed usage (a git checkout,
+      including this project's own dev/test environment). Now falls back
+      to "dev" instead (HAC-049)
     + docs: RETRY VARIABLES POD had a leftover "???" placeholder never
       filled in for RETRY_DELAY's default and a typo ("resposne") on
       RETRY_FAIL_RESPONSE - fixed, and documented the HAC-044/045
