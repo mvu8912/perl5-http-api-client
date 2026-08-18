@@ -1,3 +1,11 @@
+2026-08-18 - v1.10
+    + docs: rewrote the USAGE section - the signed-request example (the
+      module's stated reason to exist per DESCRIPTION) now leads instead
+      of being buried after three generic examples, leftover casual-era
+      phrasing from the original docs was removed, and the section was
+      split into labeled subsections instead of one run-on block mixing
+      old and new writing styles (HAC-054)
+
 2026-08-18 - v1.09
     + docs: added ATTRIBUTES entries for retry_config and json - real,
       working programmatic alternatives to the env-var-only retry and

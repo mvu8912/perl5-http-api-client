@@ -44,37 +44,18 @@ reimplement the same header-signing/retry logic by hand.
 
  use HTTP::API::Client;
 
- my $ua1 = HTTP::API::Client->new;
- my $ua2 = HTTP::API::Client->new(base_url => URI->new( $url ), pre_defined_headers => { X_COMPANY => 'ABC LTD' } );
- my $ua3 = HTTP::API::Client->new(base_url => URI->new( $url ), pre_defined_data => { api_key => 123 } );
+The constructor takes no required arguments:
 
- $ua->send( $method, $url, \%data, \%header );
+ my $ua = HTTP::API::Client->new(
+     base_url => "https://api.example.com",
+ );
 
-Send short hand methods - get, post, head, put and delete
+=head2 A signed request
 
-Example:
-
- $ua->get( $url ) same as $ua->send( GET, $url );
- $ua->post( $url, \%data, \%headers ) same as $ua->send( POST, $url, \%data, \%headers );
-
-Get Json Data - grab the content body from the response and json decode
-
- $ua = HTTP::API::Client->new(base_url => URI->new("http://google.com"));
- $ua->get("/search" => { q => "something" });
- my $hashref_from_decoded_json_string = $ua->json_response;
- ## ps. this is just an example to get json from a rest api
-
-Send a query string to server
-
- $ua = HTTP::API::Client->new( content_type => "application/x-www-form-urlencoded" );
- $ua->post("http://google.com", { q => "something" });
- my $response = $ua->last_response; ## is a HTTP::Response object
-
-At the moment, only support query string and json data in and out
-
-Compute a signature header from the request's own data, once, at
-construction - every call this client makes carries it automatically,
-and the secret used to compute it never appears in the request itself:
+This is the case the module exists for: compute an auth header from the
+request's own data, once, at construction - every call this client makes
+carries it automatically, and the secret used to compute it never appears
+in the request itself.
 
  my $ua = HTTP::API::Client->new(
      base_url => "https://api.example.com",
@@ -100,6 +81,29 @@ and the secret used to compute it never appears in the request itself:
  #    Signature: AKIA123:s3cr3t
 
 See L</"new_request(%options)"> for the full list of build-time hooks this uses.
+
+=head2 Shorthand methods
+
+C<get>/C<post>/C<put>/C<head>/C<delete> are shorthand over C<send()>:
+
+ $ua->get($url);                       # same as $ua->send( GET, $url )
+ $ua->post($url, \%data, \%headers);   # same as $ua->send( POST, $url, \%data, \%headers )
+
+=head2 JSON in, JSON out
+
+ my $ua = HTTP::API::Client->new(base_url => "http://example.com");
+ $ua->get("/search", { q => "something" });
+ my $decoded = $ua->json_response;   # the response body, JSON-decoded
+
+=head2 Form-urlencoded
+
+ my $ua = HTTP::API::Client->new(content_type => "application/x-www-form-urlencoded");
+ $ua->post("http://example.com", { q => "something" });
+ my $response = $ua->last_response;   # an HTTP::Response object
+
+Body encoding only knows how to serialize into JSON or a query string
+(see C<convert_data()> below) - any other content type must be built and
+passed in already-encoded.
 
 =head1 ATTRIBUTES
 
