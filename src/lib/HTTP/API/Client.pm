@@ -441,6 +441,7 @@ sub _build_retry {
     my ($self) = @_;
     my %retry  = %{ _defor($self->retry_config, {}) };
     my $count  = $retry{fail_response};
+    $count = 0 if defined $count && looks_like_number($count) && $count < 0;
     my %status = map { s/^\s+|\s+$//g; $_ => 1 } split /,/, $retry{fail_status};
 
     my $delay = $retry{delay};

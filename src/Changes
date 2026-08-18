@@ -1,4 +1,10 @@
 2026-08-18 - v1.08
+    + fix: a negative retry count (e.g. RETRY_FAIL_RESPONSE=-1) made
+      send()/get()/etc silently return undef - Perl's 0..N range is empty
+      for a negative N, so the retry loop's body (which builds and sends
+      the request) never ran at all, with no error or warning. Now
+      clamped to a minimum of 0 in _build_retry, matching the documented
+      "default 0 retry" floor (HAC-044)
     + test: t/08_retry.t also switched to the shared t/lib/FakeUA.pm
       fixture (HAC-042 follow-up) - it was a strict subset of the shared
       fixture's behavior. No behavior change (HAC-043)
