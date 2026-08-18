@@ -1,4 +1,11 @@
 2026-08-18 - v1.08
+    + docs: fixed 5 confirmed POD/README defects found by an explicit
+      audit - the post() USAGE example said 'same as send(GET,...)'
+      instead of POST, HTTP_TIMEOUT still had an unfilled '???'
+      placeholder, browser_id/ua were undocumented in ATTRIBUTES, and
+      src/README.md directly contradicted itself ("Docker only... no
+      other supported dev setup" immediately followed by full local Perl
+      instructions) with a stale coverage-baseline date (HAC-050)
     + fix: browser_id's version fallback was -1, producing the
       nonsensical User-Agent "HTTP API Client v-1" - $VERSION is only
       set by Dist::Zilla's [PkgVersion] plugin at build time, so this

@@ -21,7 +21,7 @@ Send short hand methods - get, post, head, put and delete
 Example:
 
  $ua->get( $url ) same as $ua->send( GET, $url );
- $ua->post( $url, \%data, \%headers ) same as $ua->send( GET, $url, \%data, \%headers );
+ $ua->post( $url, \%data, \%headers ) same as $ua->send( POST, $url, \%data, \%headers );
 
 Get Json Data - grab the content body from the response and json decode
 
@@ -108,6 +108,22 @@ nothing).
 Read-write. The most recent L<HTTP::Response>, set by C<send()> and read by
 L</json_response>/L</kvp_response>. C<undef> until the first request.
 
+=item ua
+
+Read-write. The underlying user-agent object C<send()> dispatches through
+- an L<LWP::UserAgent> by default, built lazily by C<_build_ua> on first
+use. Set this directly to inject a stand-in (a fake, a mock, a
+pre-configured instance) instead of the real one; this is how the test
+suite avoids making real network calls.
+
+=item browser_id
+
+Read-write. The C<User-Agent> header value passed to the underlying
+C<ua>. Defaults to C<"HTTP API Client v$VERSION"> - C<$VERSION> is only
+set when running the installed CPAN release (Dist::Zilla's
+C<[PkgVersion]> plugin injects it at build time), so a development
+checkout reports C<"HTTP API Client vdev"> instead.
+
 =back
 
 =head1 ENVIRONMENT VARIABLES
@@ -120,7 +136,7 @@ HTTP VARIABLES
  HTTP_PASSWORD   - basic auth password
  HTTP_AUTH_TOKEN - basic auth token string
  HTTP_CHARSET    - content type charset. default utf8
- HTTP_TIMEOUT    - timeout the request for ??? seconds. default 60 seconds.
+ HTTP_TIMEOUT    - timeout the request in seconds. default 60 seconds.
  SSL_VERIFY      - verify ssl url. default is off
 
 DEBUG VARIABLES
