@@ -1,3 +1,42 @@
+2026-08-18 - v1.15
+    + fix: kvp_response() only decoded %XX percent-encoding, never the
+      application/x-www-form-urlencoded convention of a literal +
+      meaning a space - decoding "q=hello+world" returned
+      { q => "hello+world" } instead of { q => "hello world" }.
+      kvp2str_each's own encoder never emits a raw + (it uses %20), so
+      this only bit when kvp_response decoded a response body from any
+      other API using the + convention, which is extremely common. A
+      genuinely percent-encoded literal + (%2B) still decodes correctly,
+      distinct from a raw + meaning space (HAC-074)
+    + fix: kvp_response() produced a bogus '' => undef entry plus two
+      uninitialized-value warnings whenever the response body had an
+      empty &-separated segment (a leading, trailing, or doubled &,
+      e.g. "a=1&&a=2") - split /&/ yields an empty string for that
+      segment, and splitting *that* on = leaves both key and value
+      undef. Same failure signature HAC-060/061/065 already fixed on
+      the encode side, now closed on the decode side too - an empty
+      segment is skipped entirely (HAC-075)
+    + fix: json_response() never re-applied charset before decoding,
+      unlike kvp2json() (HAC-067) which does on the encode side - json
+      is lazy and memoized, built once in whatever charset mode was set
+      at the time. Changing charset afterward and calling
+      json_response() again on the same response body still decoded
+      through the stale mode, silently producing mojibake for a
+      UTF-8-encoded body if json had first been built in a non-utf8
+      mode. json_response() now re-applies charset on every call,
+      matching kvp2json()'s existing behavior (HAC-076)
+    + fix: xCSV()/xBOOLEAN() both blessed \@_ directly - a reference to
+      Perl's actual arguments array, which aliases the caller's
+      variables rather than copying their values. A marker built inside
+      a loop from a shared, reused scalar variable (a natural pattern)
+      silently ended up holding whatever value that variable had LAST,
+      not the value at the time each marker was created - e.g.
+      xCSV($x, $y, 3) then reassigning $x/$y afterward changed the
+      already-created marker's contents. Both constructors now bless a
+      fresh array (bless [ @_ ], ...), copying each value at call time;
+      explicitly passing a scalar ref (xBOOLEAN(\$flag)) still tracks
+      live, which remains the documented way to opt into that (HAC-077)
+
 2026-08-18 - v1.14
     + fix: an empty ARRAY nested inside an xCSV(...) list left a stray
       blank comma segment instead of being omitted - xCSV(6, 7, [], 15)

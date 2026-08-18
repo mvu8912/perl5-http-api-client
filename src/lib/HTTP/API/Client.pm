@@ -217,14 +217,16 @@ each key does.
 
 =item json
 
-Read-write. The L<JSON::XS> instance C<kvp2json()> encodes through,
-built lazily with C<->canonical->allow_nonref>. Set this directly to
-inject a differently-configured instance (e.g. one with
-C<->allow_blessed> enabled) instead of the default. C<charset> is
-re-applied to it (via its C<utf8>/C<latin1>/etc method) at the start of
-every C<kvp2json()> call, not just when C<json> is first built, so a
-C<charset> change takes effect on the next JSON encode even if C<json>
-was already in use - this also applies to an injected custom instance.
+Read-write. The L<JSON::XS> instance C<kvp2json()> encodes through and
+C<json_response()> decodes through, built lazily with
+C<->canonical->allow_nonref>. Set this directly to inject a
+differently-configured instance (e.g. one with C<->allow_blessed>
+enabled) instead of the default. C<charset> is re-applied to it (via its
+C<utf8>/C<latin1>/etc method) at the start of every C<kvp2json()>/
+C<json_response()> call, not just when C<json> is first built, so a
+C<charset> change takes effect on the next encode or decode even if
+C<json> was already in use - this also applies to an injected custom
+instance.
 
 =back
 
@@ -284,7 +286,10 @@ suite inspects what would have gone out.
 
 Decode the C<last_response> body as JSON and return the resulting hashref.
 Never dies - a missing response or invalid JSON comes back as
-C<< { status => "error", error => $message } >> instead.
+C<< { status => "error", error => $message } >> instead. C<charset> is
+re-applied to C<json> at the start of every call, the same as
+C<kvp2json()> does on the encode side, so a C<charset> change takes
+effect on the next decode too.
 
 =head2 kvp_response
 
@@ -293,7 +298,14 @@ and return it as a hashref. Returns C<{}> if no request has been made yet,
 or the response body is empty. A key that repeats (the shape
 C<kvp2str_each> produces when encoding an array-valued field) decodes to
 an arrayref of every value seen, in order; a key seen once still decodes
-to a plain scalar.
+to a plain scalar. Decodes both percent-encoding and the
+C<application/x-www-form-urlencoded> convention of a literal C<+> meaning
+a space (a genuinely percent-encoded literal C<+>, i.e. C<%2B>, still
+decodes to C<+>) - this matters for a response body from any API, not
+just one built by this module's own C<kvp2str_each>, which never emits a
+raw C<+> itself. An empty C<&>-separated segment (a leading, trailing,
+or doubled C<&>) is skipped rather than decoded into a bogus
+C<< '' => undef >> entry.
 
 =head2 new_request(%options)
 
@@ -854,7 +866,8 @@ sub json_response {
 
     my $response = try {
         my $content = _defor($self->last_response->decoded_content, '{}');
-        $self->json->decode($content);
+        my $json = _apply_charset( $self->json, $self->charset );
+        $json->decode($content);
     }
     catch {
         my $error = $_;
@@ -875,7 +888,8 @@ sub kvp_response {
 
     my %data;
     for my $pair ( split /&/, $content ) {
-        my ( $k, $v ) = map { uri_unescape($_) } split /=/, $pair, 2;
+        next if $pair eq '';
+        my ( $k, $v ) = map { ( my $s = $_ ) =~ tr/+/ /; uri_unescape($s) } split /=/, $pair, 2;
         if ( exists $data{$k} ) {
             $data{$k} = [ $data{$k} ] unless ref $data{$k} eq 'ARRAY';
             push @{ $data{$k} }, $v;

@@ -48,12 +48,14 @@ our @EXPORT = qw( xCSV xBOOLEAN
 
 Mark a list so it serializes as one comma-joined value instead of one
 repeated key per element. C<xCSV(1, 2, 3)> becomes C<a=1,2,3> in a
-form-urlencoded request instead of the default C<a=1&a=2&a=3>.
+form-urlencoded request instead of the default C<a=1&a=2&a=3>. Each
+value is copied at call time - C<xCSV($x, $y)> then reassigning C<$x>
+does not change what was already captured.
 
 =cut
 
 sub xCSV {
-    return bless \@_, 'CSV';
+    return bless [ @_ ], 'CSV';
 }
 
 =head2 xBOOLEAN($value)
@@ -63,6 +65,12 @@ C<$value> (a plain scalar or a scalar ref) so C<kvp2json_each>/
 C<kvp2str_each> unwrap and emit it verbatim instead of treating it as an
 array. Use one of the named markers below rather than this directly unless
 none of them fit.
+
+A plain scalar is copied at call time, the same as C<xCSV>'s values -
+C<xBOOLEAN($flag)> then reassigning C<$flag> does not change what was
+already captured. Pass a scalar ref instead (C<xBOOLEAN(\$flag)>) to opt
+into tracking C<$flag> live - the marker then always reflects whatever
+C<$flag> currently holds when it's later read.
 
 =head2 xTRUE / xFALSE
 
@@ -85,7 +93,7 @@ The single-character string C<"t"> / C<"f">.
 =cut
 
 sub xBOOLEAN {
-    return bless \@_, 'BOOL';
+    return bless [ @_ ], 'BOOL';
 }
 
 sub xTRUE {
