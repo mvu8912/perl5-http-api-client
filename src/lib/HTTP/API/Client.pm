@@ -358,7 +358,9 @@ solve). C<kvp2str> produces a C<key=value&key=value> query string instead,
 with C<xCSV>-marked values joined by commas instead of repeated per key.
 An empty arrayref value is omitted from C<kvp2str>'s output entirely (an
 empty array has no C<key=value> representation), the same as a key
-mapped to C<undef>/missing already is.
+mapped to C<undef>/missing already is - including an empty array nested
+inside an C<xCSV(...)> list, which contributes nothing to the joined
+string rather than leaving a blank comma segment behind.
 Both respect an C<< $events->{keys} >> callback to control which keys are
 included and in what order, and both accept a C<skip_key> hashref in
 C<%options> (same reachability caveat as C<new_request()>'s
@@ -367,25 +369,45 @@ callback recursively re-invoking C<kvp2str()>/C<kvp2json()> on itself to
 build its own value without infinite-looping on its own key; see
 F<t/04_callbacks.t>) to exclude a key from the encoded body.
 
+C<kvp2json> encodes a numeric-looking string value as a genuine JSON
+number rather than a quoted string - but only when doing so loses
+nothing (stringifying the number back reproduces the original value
+exactly). A value like C<"5"> becomes C<5>, but C<"00501"> (a US zip
+code) or C<"5.0"> stays a string, since numifying either would silently
+discard meaningful formatting. C<kvp2str> never numifies at all - a
+query string has no separate number/string type, so there was never a
+reason to risk altering the original representation.
+
 =head2 kvp2json_each(%options) / kvp2str_each(%options)
 
 The per-value helpers C<kvp2json()>/C<kvp2str()> recurse into for each key
-via C<%options>'s C<value> (and, for a top-level field, C<key> - the
-field's own key, available to a C<CODE> value's callback via C<%options>
-in both encoders alike). Resolves a C<CODE> value by calling it, unwraps
-L<HTTP::API::DataTypeMarker> markers (C<xCSV>/C<xBOOLEAN> and friends),
-and recurses into plain array/hash values. There is normally no need to
-call these directly - they exist as public methods so a C<data>/C<value>
-callback can recursively re-invoke them on itself (see
+via C<%options>'s C<value> (and C<key> - the field's own key, available
+to a C<CODE> value's callback via C<%options>; C<kvp2json_each> passes it
+through at every level, including a nested hash value's own key, not
+just the top-level field's). Resolves a C<CODE> value by calling it,
+unwraps L<HTTP::API::DataTypeMarker> markers (C<xCSV>/C<xBOOLEAN> and
+friends), and recurses into plain array values. There is normally no
+need to call these directly - they exist as public methods so a
+C<data>/C<value> callback can recursively re-invoke them on itself (see
 C<kvp2json()>/C<kvp2str()> above).
 
-These two are not symmetric on invalid input: C<kvp2json_each> dies if a
-raw-bytes (non-UTF8-flagged) value is not valid UTF-8, rather than
-silently corrupting it into C<U+FFFD> replacement characters - JSON has
-no way to represent arbitrary bytes. C<kvp2str_each> has no such
-restriction; a query string can carry any byte sequence unescaped-safe
-via percent-encoding, so the same input that dies in the JSON path
-passes through the form-urlencoded path unchanged.
+These two are not symmetric on invalid input, in two ways. First,
+C<kvp2json_each> dies if a raw-bytes (non-UTF8-flagged) value is not
+valid UTF-8, rather than silently corrupting it into C<U+FFFD>
+replacement characters - JSON has no way to represent arbitrary bytes.
+C<kvp2str_each> has no such restriction; a query string can carry any
+byte sequence unescaped-safe via percent-encoding, so the same input
+that dies in the JSON path passes through the form-urlencoded path
+unchanged. Second, a plain hash value recurses in C<kvp2json_each> (JSON
+has a native object type for it) but dies in C<kvp2str_each> - a query
+string has no standard convention for representing a nested hash.
+
+C<kvp2str_each>'s C<%options> also accepts C<no_key>, set internally when
+recursing into an ARRAY or C<xCSV> element: when true, the returned
+fragment omits the leading C<key=> prefix (a plain scalar, C<xCSV>, and
+C<xBOOLEAN>-marked value all honor this identically) so a CSV/array
+element joins as a bare value rather than a spurious embedded
+C<key=value> pair.
 
 =head1 LICENSE AND COPYRIGHT
 
@@ -1010,6 +1032,16 @@ sub _uri_escape_bytes_or_chars {
     return uri_escape( _encode_if_utf8_flagged($v) );
 }
 
+sub _numify_if_lossless {
+    my ($v) = @_;
+    return $v if !looks_like_number($v);
+    # Compare against a throwaway stringified copy, not $v+0 itself - comparing
+    # a number with eq caches a string form on that same scalar (SvPOK), and
+    # JSON::XS then encodes it as a JSON string instead of a JSON number.
+    my $stringified = ($v + 0) . '';
+    return $v eq $stringified ? $v + 0 : $v;
+}
+
 sub convert_data {
     my ($self, %o) = @_;
 
@@ -1076,7 +1108,7 @@ sub kvp2json_each {
             ) if !defined $decoded;
             $v = $decoded;
         }
-        return looks_like_number($v) ? $v+0 : $v;
+        return _numify_if_lossless($v);
     }
     elsif (ref $v eq 'BOOL') {
         return $v->[0];
@@ -1094,7 +1126,7 @@ sub kvp2json_each {
         my %parts;
 
         foreach my $key(keys %$v) {
-            $parts{$key} = $self->kvp2json_each(%o, value => $v->{$key});
+            $parts{$key} = $self->kvp2json_each(%o, key => $key, value => $v->{$key});
         }
 
         return \%parts;
@@ -1151,8 +1183,6 @@ sub kvp2str_each {
     if (!ref $v) {
         $v = _uri_escape_bytes_or_chars($v);
 
-        $v = $v + 0 if looks_like_number($v);
-
         if ($o{no_key}) {
             return $v;
         }
@@ -1162,7 +1192,8 @@ sub kvp2str_each {
     }
     elsif (ref $v eq 'BOOL') {
         my $bool_value = ref $v->[0] eq 'SCALAR' ? ${$v->[0]} : $v->[0];
-        return "$k=" . _uri_escape_bytes_or_chars($bool_value);
+        my $escaped = _uri_escape_bytes_or_chars($bool_value);
+        return $o{no_key} ? $escaped : "$k=$escaped";
     }
     elsif (ref $v eq 'ARRAY') {
         my @parts;
@@ -1181,6 +1212,8 @@ sub kvp2str_each {
         my @parts;
 
         foreach my $val(@$v) {
+            next if ref $val eq 'ARRAY' && !@$val;
+
             my $part = $self->kvp2str_each(%o, key => $raw_key, value => $val, no_key => 1);
 
             if ($part =~ m/&/) {

@@ -1,3 +1,46 @@
+2026-08-18 - v1.14
+    + fix: an empty ARRAY nested inside an xCSV(...) list left a stray
+      blank comma segment instead of being omitted - xCSV(6, 7, [], 15)
+      encoded to "e=6,7,,15" (a double comma) rather than "e=6,7,15".
+      kvp2str_each's ARRAY branch already returns '' for an empty array,
+      the same string a genuine empty-string scalar CSV element also
+      produces, so the CSV branch's loop couldn't tell them apart and
+      pushed both into the comma-joined list the same way. HAC-065
+      already established that an empty array is omitted entirely at
+      the top level of kvp2str - this extends the same treatment to an
+      empty array nested inside xCSV, without touching the genuinely
+      different case of a real empty-string element (HAC-069)
+    + fix: kvp2json_each/kvp2str_each both unconditionally coerced any
+      numeric-looking string value via looks_like_number($v) ? $v+0 : $v
+      - a leading-zero value like a US zip code "00501" silently became
+      501 in both JSON and form-urlencoded output. kvp2json_each now
+      only numifies when the round-trip is lossless (stringifying the
+      numified value reproduces the original exactly), so "5" still
+      becomes a real JSON number but "00501"/"5.0"/"+5" stay strings.
+      kvp2str_each's numification is removed entirely - a query string
+      has no separate number/string type, so it only ever risked
+      corrupting the original representation for no benefit (HAC-070)
+    + fix: kvp2str_each's BOOL branch ignored %options' no_key flag
+      entirely and always prefixed "$k=" onto its output, unlike the
+      scalar and ARRAY branches which respect it. A BOOL marker
+      (xTRUE/xFALSE) nested inside an xCSV(...) list is recursed into
+      with no_key => 1 like any other CSV element, but the leaked
+      prefix corrupted the comma-joined string - xCSV(6, 7, xTRUE(), 15)
+      encoded to "e=6,7,e=1,15" (a bogus embedded "e=") instead of
+      "e=6,7,1,15". Now respects no_key the same way the scalar branch
+      does (HAC-071)
+    + fix: kvp2json_each's HASH branch never passed the nested hash's
+      own key into %o, so a CODE-valued callback nested inside a hash
+      saw its *outer* field's key instead of its own - the same class
+      of bug HAC-064 fixed at the top level, one recursion level deeper,
+      in a case HAC-064's own test never reached (HAC-072)
+    + test: kvp2str_each's HASH branch already dies with a clear message
+      instead of recursing (a query string has no standard convention
+      for a nested hash, unlike kvp2json_each which recurses since JSON
+      has a native object type) - this was correct but undocumented and
+      untested, a third asymmetry alongside the two the METHODS POD
+      already called out (HAC-073)
+
 2026-08-18 - v1.13
     + fix: kvp2str_each returned an empty string for a top-level
       empty-arrayref-valued field instead of omitting it, and kvp2str's
