@@ -141,17 +141,22 @@ Used to build the default JSON content-type header and to decide whether
 UTF-8 byte-encoding is applied to the request body. Default C<utf8>, from
 C<HTTP_CHARSET>. Must be a real L<JSON::XS> charset method name (C<utf8>,
 C<latin1>, C<ascii>, ...) - an invalid value dies immediately and clearly,
-naming the bad value, the first time JSON encoding is needed.
+naming the bad value, the next time C<kvp2json()> is called, whether or
+not C<json> has already been built.
 
 =item timeout
 
 Request timeout in seconds, passed to the underlying L<LWP::UserAgent>.
-Default C<60>, from C<HTTP_TIMEOUT>.
+Default C<60>, from C<HTTP_TIMEOUT>. Re-applied to C<ua> at the start of
+every C<send()> call, so changing it between calls takes effect on the
+next one, not just at construction.
 
 =item ssl_verify
 
 Passed through as C<verify_hostname> to L<LWP::UserAgent>'s C<ssl_opts>.
-Default off (C<0>), from C<SSL_VERIFY>.
+Default off (C<0>), from C<SSL_VERIFY>. Re-applied to C<ua> at the start
+of every C<send()> call, so changing it between calls takes effect on
+the next one, not just at construction.
 
 =item pre_defined_data / pre_defined_headers / pre_defined_events
 
@@ -179,9 +184,13 @@ L</json_response>/L</kvp_response>. C<undef> until the first request.
 
 Read-write. The underlying user-agent object C<send()> dispatches through
 - an L<LWP::UserAgent> by default, built lazily by C<_build_ua> on first
-use. Set this directly to inject a stand-in (a fake, a mock, a
-pre-configured instance) instead of the real one; this is how the test
-suite avoids making real network calls.
+use, then reused for every subsequent call. Set this directly to inject
+a stand-in (a fake, a mock, a pre-configured instance) instead of the
+real one; this is how the test suite avoids making real network calls.
+C<browser_id>/C<timeout>/C<ssl_verify> are re-applied to it (via
+C<< $ua->agent >>/C<< $ua->timeout >>/C<< $ua->ssl_opts >>, each only if
+C<ua> supports that method) at the start of every C<send()> call, not
+just when it's first built.
 
 =item browser_id
 
@@ -189,7 +198,9 @@ Read-write. The C<User-Agent> header value passed to the underlying
 C<ua>. Defaults to C<"HTTP API Client v$VERSION"> - C<$VERSION> is only
 set when running the installed CPAN release (Dist::Zilla's
 C<[PkgVersion]> plugin injects it at build time), so a development
-checkout reports C<"HTTP API Client vdev"> instead.
+checkout reports C<"HTTP API Client vdev"> instead. Re-applied to C<ua>
+at the start of every C<send()> call, so changing it between calls takes
+effect on the next one, not just at construction.
 
 =item retry_config
 
@@ -199,16 +210,21 @@ C<RETRY_FAIL_RESPONSE>/C<RETRY_FAIL_STATUS>/C<RETRY_DELAY> - set this
 directly to configure retry behavior at construction without touching
 process environment variables. A partial hashref is fine - any key you
 omit falls back to that same env var's default (C<0>/C<''>/C<5>), not to
-the environment variable itself. See L</"ENVIRONMENT VARIABLES"> for what
+the environment variable itself. Re-applied at the start of every
+C<send()> call, so changing it between calls takes effect on the next
+one, not just at construction. See L</"ENVIRONMENT VARIABLES"> for what
 each key does.
 
 =item json
 
 Read-write. The L<JSON::XS> instance C<kvp2json()> encodes through,
-built lazily with C<->canonical->allow_nonref> and the C<charset>
-method applied. Set this directly to inject a differently-configured
-instance (e.g. one with C<->allow_blessed> enabled) instead of the
-default.
+built lazily with C<->canonical->allow_nonref>. Set this directly to
+inject a differently-configured instance (e.g. one with
+C<->allow_blessed> enabled) instead of the default. C<charset> is
+re-applied to it (via its C<utf8>/C<latin1>/etc method) at the start of
+every C<kvp2json()> call, not just when C<json> is first built, so a
+C<charset> change takes effect on the next JSON encode even if C<json>
+was already in use - this also applies to an injected custom instance.
 
 =back
 
@@ -340,6 +356,9 @@ has no special JSON handling and just JSON-encodes as an ordinary array
 (there's no C<key=value&key=value> repetition problem in JSON for it to
 solve). C<kvp2str> produces a C<key=value&key=value> query string instead,
 with C<xCSV>-marked values joined by commas instead of repeated per key.
+An empty arrayref value is omitted from C<kvp2str>'s output entirely (an
+empty array has no C<key=value> representation), the same as a key
+mapped to C<undef>/missing already is.
 Both respect an C<< $events->{keys} >> callback to control which keys are
 included and in what order, and both accept a C<skip_key> hashref in
 C<%options> (same reachability caveat as C<new_request()>'s
@@ -604,9 +623,12 @@ has json => (
 );
 
 sub _build_json {
-    my ($self)  = @_;
-    my $json    = JSON::XS->new->canonical->allow_nonref;
-    my $charset = $self->charset;
+    my ($self) = @_;
+    return _apply_charset( JSON::XS->new->canonical->allow_nonref, $self->charset );
+}
+
+sub _apply_charset {
+    my ($json, $charset) = @_;
     eval { $json->$charset; 1 } or die "Unsupported charset '$charset': $@";
     return $json;
 }
@@ -702,10 +724,14 @@ sub send {
     my $base_url     = $self->base_url;
     my $url          = $base_url ? $base_url . $path : $path;
     my $ua           = $self->ua;
-    my $retry_count  = _defor( $self->retry->{count}, 1 );
-    my $retry_delay  = _defor( $self->retry->{delay}, 5 );
+    $ua->agent( $self->browser_id ) if $ua->can('agent');
+    $ua->timeout( $self->timeout ) if $ua->can('timeout');
+    $ua->ssl_opts( verify_hostname => $self->ssl_verify ) if $ua->can('ssl_opts');
+    my $retry        = $self->_build_retry;
+    my $retry_count  = _defor( $retry->{count}, 1 );
+    my $retry_delay  = _defor( $retry->{delay}, 5 );
     $retry_delay = 0 if looks_like_number($retry_delay) && $retry_delay < 0;
-    my %retry_status = %{ _defor($self->retry->{status}, {}) };
+    my %retry_status = %{ _defor($retry->{status}, {}) };
     my %debug        = %{ _defor($self->debug_flags, {}) };
     my $eng          = $self->engine;
 
@@ -1008,6 +1034,8 @@ sub kvp2json {
 
     my ($data, $events) = @o{qw(data events)};
 
+    my $json = _apply_charset( $self->json, $self->charset );
+
     my @keys;
 
     if (my $do = $events->{keys}) {
@@ -1027,7 +1055,7 @@ sub kvp2json {
         $data{$key} = $self->kvp2json_each(%o, key => $key, value => $data->{$key});
     }
 
-    return $self->json->encode(\%data);
+    return $json->encode(\%data);
 }
 
 sub kvp2json_each {
@@ -1102,7 +1130,8 @@ sub kvp2str {
     foreach my $key(@keys) {
         next if $events->{not_include}{$key};
         next if _should_skip_key(%o, key => $key);
-        push @parts, $self->kvp2str_each(%o, key => $key, value => $data->{$key});
+        my $part = $self->kvp2str_each(%o, key => $key, value => $data->{$key});
+        push @parts, $part if length $part;
     }
 
     return join '&', @parts;
@@ -1139,8 +1168,11 @@ sub kvp2str_each {
         my @parts;
 
         foreach my $val(@$v) {
-            push @parts, $self->kvp2str_each(%o, key => $raw_key, value => $val, no_key => 0);
+            my $part = $self->kvp2str_each(%o, key => $raw_key, value => $val, no_key => 0);
+            push @parts, $part if length $part;
         }
+
+        return '' if !@parts;
 
         return ($o{no_key} ? '&' : '') . join '&', @parts;
     }

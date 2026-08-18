@@ -1,3 +1,39 @@
+2026-08-18 - v1.13
+    + fix: kvp2str_each returned an empty string for a top-level
+      empty-arrayref-valued field instead of omitting it, and kvp2str's
+      caller loop pushed that empty string in among the other encoded
+      parts - { a => 1, tags => [], z => 9 } encoded to "a=1&&z=9" (a
+      stray double ampersand). Decoding that back through this module's
+      own kvp_response() produced a bogus '' => undef key and an
+      uninitialized-value warning - the same failure signature HAC-061
+      already fixed for a different trigger (an ARRAY nested inside
+      xCSV). An empty array is now omitted entirely, the same treatment
+      a key mapped to undef/missing already gets (HAC-065)
+    + fix: browser_id/timeout/ssl_verify are documented as plain
+      read-write attributes, but ua is lazy and memoized - built once,
+      on first use, from whatever those attributes were at the time.
+      Changing any of them after the first request was a silent no-op:
+      the underlying LWP::UserAgent's agent/timeout/ssl_opts never
+      updated, with no error or warning. send() now re-applies all
+      three to the existing ua object at the start of every call, each
+      guarded by a can() check so FakeUA and other minimal test doubles
+      aren't broken (HAC-066)
+    + fix: same class of bug as HAC-066, in the json attribute - lazy
+      and memoized, built once from whatever charset was set at the
+      time. Changing charset after the first JSON encode was a silent
+      no-op: an invalid charset no longer triggered HAC-046's documented
+      immediate die, and switching between two valid charsets had no
+      effect on the actual output bytes. kvp2json() now re-applies
+      charset to the existing json object at the start of every call
+      (HAC-067)
+    + fix: same class of bug as HAC-066/HAC-067, in retry_config - retry
+      is lazy and memoized from _build_retry, built once from whatever
+      retry_config was at the time send() first ran. Changing
+      retry_config after that first call was a silent no-op: send() kept
+      using the stale memoized retry count/delay/status on every later
+      call. send() now recomputes retry fresh from the current
+      retry_config at the start of every call (HAC-068)
+
 2026-08-18 - v1.12
     + docs: DataTypeMarker.pm's DESCRIPTION and Client.pm's kvp2json POD
       both claimed kvp2json_each special-cases xCSV the same way
