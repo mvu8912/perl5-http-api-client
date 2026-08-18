@@ -1,6 +1,8 @@
 # HTTP::API::Client
 
-A Perl (Moo-based) generic HTTP/REST API client wrapping `LWP::UserAgent` - `get`/`post`/`put`/`head`/`delete` shorthand over one `send()`, a per-request event/callback system for computing things like signed-request headers at build time, retry-with-backoff, and JSON or form-urlencoded body encoding. See [`src/lib/HTTP/API/Client.pm`](src/lib/HTTP/API/Client.pm)'s POD for the full API.
+A Perl (Moo-based) generic HTTP/REST API client wrapping `LWP::UserAgent` - `get`/`post`/`put`/`head`/`delete` shorthand over one `send()`, a per-request event/callback system for computing things like signed-request headers at build time, retry-with-backoff, and JSON or form-urlencoded body encoding.
+
+**Why:** talking to an authenticated JSON/form API with plain `LWP::UserAgent` usually means the same boilerplate on every call - compute a signature from the request's own data, keep the signing secret out of the body, retry on a flaky response, serialize values Perl has no native boolean/comma-list for. This module is that boilerplate, written once. See [`src/lib/HTTP/API/Client.pm`](src/lib/HTTP/API/Client.pm)'s POD for the full API and a worked signing example.
 
 ## Layout
 

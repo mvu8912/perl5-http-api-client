@@ -1,3 +1,12 @@
+2026-08-18 - v1.09
+    + docs: added a DESCRIPTION section explaining why this module
+      exists (repetitive signed-API-request boilerplate) and when
+      LWP::UserAgent/HTTP::Tiny are simpler choices instead, plus a
+      verified-working signed-request USAGE example showing the event
+      system computing a signature header while keeping the secret out
+      of the body. Both README.md files gained a matching purpose
+      paragraph before their setup instructions (HAC-051)
+
 2026-08-18 - v1.08
     + docs: fixed 5 confirmed POD/README defects found by an explicit
       audit - the post() USAGE example said 'same as send(GET,...)'

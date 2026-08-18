@@ -4,7 +4,41 @@ use Moo;
 
 =head1 NAME
 
-HTTP::API::Client - API Client
+HTTP::API::Client - lightweight HTTP/REST client with per-request signing
+hooks, retry-with-backoff, and JSON/form encoding
+
+=head1 DESCRIPTION
+
+Talking to an authenticated JSON or form-urlencoded REST API with plain
+L<LWP::UserAgent> usually means the same boilerplate on every call: compute
+a signature or auth header from the request's own data, remember not to
+leak the signing secret into the body, retry on a flaky response, and
+serialize Perl values (which have no native boolean and no native
+comma-list) unambiguously. C<HTTP::API::Client> is that boilerplate,
+written once - a thin L<LWP::UserAgent> wrapper with:
+
+=over 4
+
+=item * An event/callback system (see L</"new_request(%options)">) that computes
+header or data values from the rest of the request at build time - the
+mechanism for a signed-request header, not a special case bolted on top
+of it.
+
+=item * Retry-with-backoff on failed responses, configurable per status
+code (see L</"ENVIRONMENT VARIABLES">).
+
+=item * JSON and form-urlencoded body encoding from the same C<%data>
+hash, including L<HTTP::API::DataTypeMarker>'s C<xTRUE>/C<xCSV>-family
+markers for the values Perl scalars can't represent unambiguously on
+their own.
+
+=back
+
+If none of that boilerplate applies to what you're calling - no signing,
+no retry policy, plain data - reaching for L<LWP::UserAgent> or
+L<HTTP::Tiny> directly is simpler. This module earns its weight
+specifically for authenticated API clients that would otherwise
+reimplement the same header-signing/retry logic by hand.
 
 =head1 USAGE
 
@@ -37,6 +71,35 @@ Send a query string to server
  my $response = $ua->last_response; ## is a HTTP::Response object
 
 At the moment, only support query string and json data in and out
+
+Compute a signature header from the request's own data, once, at
+construction - every call this client makes carries it automatically,
+and the secret used to compute it never appears in the request itself:
+
+ my $ua = HTTP::API::Client->new(
+     base_url => "https://api.example.com",
+     pre_defined_data => {
+         api_key    => "AKIA123",
+         api_secret => sub { "s3cr3t" },    # or read from config/env
+     },
+     pre_defined_headers => {
+         APIKEY    => sub { my (undef, %o) = @_; $o{data}{api_key} },
+         Signature => sub {
+             my (undef, %o) = @_;
+             "$o{data}{api_key}:$o{data}{api_secret}";    # a real HMAC in practice
+         },
+     },
+     pre_defined_events => {
+         not_include => { api_secret => 1 },    # keep the secret out of the body/query
+     },
+ );
+
+ $ua->get("/search", { q => "widgets" });
+ # -> GET https://api.example.com/search?api_key=AKIA123&q=widgets
+ #    APIKEY: AKIA123
+ #    Signature: AKIA123:s3cr3t
+
+See L</"new_request(%options)"> for the full list of build-time hooks this uses.
 
 =head1 ATTRIBUTES
 

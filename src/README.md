@@ -1,6 +1,11 @@
 # Project Name - HTTP-API-Client #
 
-API Client
+A lightweight `LWP::UserAgent` wrapper for authenticated JSON/form REST
+APIs: an event/callback system for computing signed-request headers from
+the request's own data at build time, retry-with-backoff, and
+`xTRUE`/`xCSV`-style data type markers for the values a plain Perl scalar
+can't represent unambiguously. See `lib/HTTP/API/Client.pm`'s POD for the
+full API and a worked signing example.
 
 # SETUP #
 --------------------------------------------------------------
