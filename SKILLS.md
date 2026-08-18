@@ -65,6 +65,8 @@ The PAUSE user `MICVU` indexing-permission blocker from 2016-2021 releases (trac
 
 This project's process lives in Tira, not in this file or in issues. Ticket columns: `backlog -> tdd -> implement -> verify -> coverage -> regression -> review -> docs -> pending-release -> release -> done`. A ticket only reaches `release` when the maintainer moves it there themselves - that's the deliberate, manual trigger for "this is going in the next actual version," separate from the automated gates before it. `d2 tira.police.outstanding` shows what's currently unresolved; `d2 tira.policy.review` shows every rule this board has declared, declined, or left unanswered.
 
+**Epics have their own, separate board** (`d2 tira.epic.*`, columns `backlog -> active -> done`/`discard`) - not the ticket board's columns. Move an epic to `active` once real work starts under it, not just when it's created; leaving it in `backlog` while children get worked is a real mistake this project made once (both epics sat unused in `backlog` for hours of continuous child-ticket activity before it was caught). `EPC-001` (tooling/SDLC setup) had a natural endpoint and moved to `done`; `EPC-002` (ongoing bug/improvement hunts) stays `active` indefinitely, since new hunts keep adding children to it forever - there is no "done" state for it.
+
 ## Docs that must stay current with every change
 
 `README.md`, this file, `Changes`, and POD in every `.pm`/`.t` file - not deferred to a separate cleanup pass.
