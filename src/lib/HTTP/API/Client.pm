@@ -1238,7 +1238,7 @@ sub kvp2str_each {
             }
         }
 
-        my $csv = "$k=".join( ',', @csv);
+        my $csv = ($o{no_key} ? '' : "$k=") . join( ',', @csv);
 
         if (@parts) {
             return join '&', $csv, map { s/^&//r } @parts;

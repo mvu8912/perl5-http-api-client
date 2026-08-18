@@ -1,3 +1,14 @@
+2026-08-18 - v1.16
+    + fix: kvp2str_each's CSV branch always prefixed "$k=" regardless of
+      %options' no_key flag, unlike the scalar/BOOL/ARRAY branches which
+      all respect it. An xCSV value nested inside another xCSV is
+      recursed into with no_key => 1 (the same mechanism HAC-071 fixed
+      for a BOOL nested in CSV), but the CSV branch ignored it -
+      xCSV(6, 7, xCSV(13, 14), 15) encoded to "e=6,7,e=13,14,15" (a
+      bogus embedded "e=") instead of "e=6,7,13,14,15". CSV nested in
+      CSV was the one nesting combination HAC-069/071 didn't cover
+      (HAC-078)
+
 2026-08-18 - v1.15
     + fix: kvp_response() only decoded %XX percent-encoding, never the
       application/x-www-form-urlencoded convention of a literal +
