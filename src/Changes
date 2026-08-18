@@ -1,4 +1,8 @@
 2026-08-18 - v1.08
+    + docs: RETRY VARIABLES POD had a leftover "???" placeholder never
+      filled in for RETRY_DELAY's default and a typo ("resposne") on
+      RETRY_FAIL_RESPONSE - fixed, and documented the HAC-044/045
+      negative-value clamping (HAC-048)
     + docs: charset attribute POD now names valid values and the
       HAC-046 invalid-value error behavior (HAC-047)
     + fix: an invalid charset value (e.g. a typo in HTTP_CHARSET) was

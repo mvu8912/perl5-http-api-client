@@ -135,9 +135,12 @@ DEBUG VARIABLES
 
 RETRY VARIABLES
 
- RETRY_FAIL_RESPONSE  - number of time to retry if resposne comes back is failed. default 0 retry
+ RETRY_FAIL_RESPONSE  - number of time to retry if response comes back is failed. default 0 retry.
+                        A negative value is clamped to 0 (no retry) rather than silently
+                        making zero attempts.
  RETRY_FAIL_STATUS    - only retry if specified status code. e.g. 500,404
- RETRY_DELAY          - retry with wait time of ??? seconds in between
+ RETRY_DELAY          - retry with wait time of 5 seconds in between, by default. A negative
+                        value is clamped to 0 rather than reaching sleep() as-is.
 
 =head1 METHODS
 
