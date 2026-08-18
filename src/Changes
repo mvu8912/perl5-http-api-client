@@ -1,3 +1,12 @@
+2026-08-18 - v1.19
+    + fix: kvp2str_each's BOOL branch produced a spurious "Use of
+      uninitialized value" warning when a live xBOOLEAN(\$var) reference
+      currently held undef - the undef value reached string
+      interpolation undefaulted. kvp2json_each already handled the
+      identical input silently (encodes JSON null). kvp2str_each now
+      defaults an undef live value to '' before escaping, matching the
+      scalar branch's existing convention (HAC-082)
+
 2026-08-18 - v1.18
     + fix: kvp2json_each's BOOL branch unconditionally returned the
       marker's inner value, which is only safe when that value is

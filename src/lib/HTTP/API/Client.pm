@@ -1232,7 +1232,7 @@ sub kvp2str_each {
     }
     elsif (ref $v eq 'BOOL') {
         my $bool_value = ref $v->[0] eq 'SCALAR' ? ${$v->[0]} : $v->[0];
-        my $escaped = _uri_escape_bytes_or_chars($bool_value);
+        my $escaped = _uri_escape_bytes_or_chars( _defor($bool_value, '') );
         return $o{no_key} ? $escaped : "$k=$escaped";
     }
     elsif (ref $v eq 'ARRAY') {
