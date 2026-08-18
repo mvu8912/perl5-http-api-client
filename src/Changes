@@ -1,3 +1,20 @@
+2026-08-18 - v1.17
+    + docs: kvp2str's before_sorting_keys/after_sorting_keys events are
+      real, working, and tested (t/21_before_events.t,
+      t/33_before_sorting_keys_mutation.t) but were never mentioned in
+      the METHODS POD, which only documented the shared events->{keys}
+      callback both encoders use. Documented both hooks: kvp2str-only,
+      genuinely live (a callback mutating @$keys changes the actual
+      output), before_sorting_keys' mutation only survives if
+      events->{keys} isn't also set (HAC-079)
+    + refactor: send()'s outer $retry (a settings hashref: count/status/
+      delay) was immediately shadowed by the RETRY loop's own "foreach
+      my $retry (0..$retry_count)" loop counter. Currently harmless -
+      the hashref is fully consumed into separate lexicals before the
+      loop starts - but a real trap for any future edit inside the loop
+      expecting $retry->{...}. Renamed the outer variable to
+      $retry_settings; no behavior change (HAC-080)
+
 2026-08-18 - v1.16
     + fix: kvp2str_each's CSV branch always prefixed "$k=" regardless of
       %options' no_key flag, unlike the scalar/BOOL/ARRAY branches which

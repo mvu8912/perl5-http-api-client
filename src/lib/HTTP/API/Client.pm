@@ -381,6 +381,18 @@ callback recursively re-invoking C<kvp2str()>/C<kvp2json()> on itself to
 build its own value without infinite-looping on its own key; see
 F<t/04_callbacks.t>) to exclude a key from the encoded body.
 
+C<kvp2str> alone also fires C<< $events->{before_sorting_keys} >> and
+C<< $events->{after_sorting_keys} >>, each called with C<< keys => \@keys
+>> - an arrayref of the field names about to be (respectively, just
+were) sorted. Both are genuinely live: a callback that mutates
+C<@$keys> in place (push/splice/grep out an element) changes what
+C<kvp2str> actually encodes, as long as C<< $events->{keys} >> isn't
+also set (which replaces C<@keys> outright, discarding
+C<before_sorting_keys>' mutation). See F<t/21_before_events.t> and
+F<t/33_before_sorting_keys_mutation.t>. C<kvp2json> has no equivalent
+hook - its C<@keys> is either C<< $events->{keys} >>'s return value or
+an unsorted C<keys %$data>, with no separate sorting step to hook into.
+
 C<kvp2json> encodes a numeric-looking string value as a genuine JSON
 number rather than a quoted string - but only when doing so loses
 nothing (stringifying the number back reproduces the original value
@@ -761,11 +773,11 @@ sub send {
     $ua->agent( $self->browser_id ) if $ua->can('agent');
     $ua->timeout( $self->timeout ) if $ua->can('timeout');
     $ua->ssl_opts( verify_hostname => $self->ssl_verify ) if $ua->can('ssl_opts');
-    my $retry        = $self->_build_retry;
-    my $retry_count  = _defor( $retry->{count}, 1 );
-    my $retry_delay  = _defor( $retry->{delay}, 5 );
+    my $retry_settings = $self->_build_retry;
+    my $retry_count  = _defor( $retry_settings->{count}, 1 );
+    my $retry_delay  = _defor( $retry_settings->{delay}, 5 );
     $retry_delay = 0 if looks_like_number($retry_delay) && $retry_delay < 0;
-    my %retry_status = %{ _defor($retry->{status}, {}) };
+    my %retry_status = %{ _defor($retry_settings->{status}, {}) };
     my %debug        = %{ _defor($self->debug_flags, {}) };
     my $eng          = $self->engine;
 
