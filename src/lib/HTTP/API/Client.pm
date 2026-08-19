@@ -909,7 +909,6 @@ sub send {
     my $retry_settings = $self->_build_retry;
     my $retry_count  = _defor( $retry_settings->{count}, 1 );
     my $retry_delay  = _defor( $retry_settings->{delay}, 5 );
-    $retry_delay = 0 if looks_like_number($retry_delay) && $retry_delay < 0;
     my %retry_status = %{ _defor($retry_settings->{status}, {}) };
     my %debug        = %{ _defor($self->debug_flags, {}) };
     my $eng          = $self->engine;
