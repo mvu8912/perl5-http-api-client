@@ -942,9 +942,10 @@ sub send {
   RETRY:
     foreach my $retry ( 0 .. $retry_count ) {
         my $started_time = time;
+        my $req;
 
         if ( $eng eq 'LWP::UserAgent' ) {
-            my $req = $self->new_request( %options );
+            $req = $self->new_request( %options );
 
             if ($events->{test_request_object}) {
                 return $req;
@@ -963,7 +964,11 @@ sub send {
             if ( $retry_count && $retry ) {
                 print STDERR "-- RETRY $retry of $retry_count\n";
             }
-            print STDERR $response->request->as_string;
+            ## $response->request is the LAST request LWP::UserAgent sent, which
+            ## after a redirect (default-on for GET/HEAD) is a different object
+            ## pointing at the redirected-to URL - not the request this call
+            ## actually issued. Use $req, the one we built and passed in.
+            print STDERR $req->as_string;
             print STDERR "\n";
         }
 

@@ -1,3 +1,17 @@
+2026-08-19 - v1.25
+    + fix: send()'s DEBUG_IN_OUT/DEBUG_SEND_OUT "-- REQUEST --" dump printed
+      $response->request->as_string instead of the $req object it actually
+      built and passed to $ua->request($req). LWP::UserAgent follows
+      redirects automatically for GET/HEAD by default (max_redirect=7,
+      requests_redirectable=[GET,HEAD]); after a redirect $response->request
+      is the LAST request in the chain - a different object, pointing at the
+      redirected-to URL, not the request this call actually issued. So the
+      debug dump could silently show the wrong request (wrong URL, and for
+      a 303-redirected POST, even the wrong method) whenever a GET/HEAD hit
+      a redirect. Fixed by hoisting $req to be captured once built and using
+      it directly for the REQUEST dump; the RESPONSE dump is unaffected, it
+      correctly reflects the final response as received (HAC-121, t/87)
+
 2026-08-19 - v1.24
     + docs: added POD ATTRIBUTES entries for "retry" and "debug_flags" -
       both are public read-write constructor attributes that had no
