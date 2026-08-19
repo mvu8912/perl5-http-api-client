@@ -13,6 +13,13 @@
       similar to kvp2json's/kvp2str's events->{keys}) - a duplicate key
       silently double-fired before_header/after_header for that key.
       Deduplicated the same order-preserving way (HAC-130, t/95)
+    + test: coverage added for three untested condition-coverage rows on
+      already-correct behavior: _build_retry's non-numeric-count
+      passthrough (HAC-131, t/96), new_request's skip-header guard for a
+      headers_keys-listed key never present in %headers at all (HAC-132,
+      t/97), and prepare_request's Basic-auth guard for an empty username
+      with a non-empty password (HAC-133, t/98). Client.pm's condition
+      coverage reaches 100% as a result
 
 2026-08-19 - v1.25
     + fix: send()'s DEBUG_IN_OUT/DEBUG_SEND_OUT "-- REQUEST --" dump printed
