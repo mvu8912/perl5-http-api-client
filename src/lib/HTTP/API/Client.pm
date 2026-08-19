@@ -1443,11 +1443,11 @@ sub kvp2str_each {
         return $csv;
     }
     elsif (UNIVERSAL::isa($v, 'HASH')) {
-        die "Unable to convert nested hash value for key '$k' into a form-urlencoded query string\n";
+        die "Unable to convert nested hash value for key '$raw_key' into a form-urlencoded query string\n";
     }
 
     die "Unable to convert a " . ref($v) . " reference into a form-urlencoded "
-        . "query string value for key '$k' - wrap it in xBOOLEAN() if you meant "
+        . "query string value for key '$raw_key' - wrap it in xBOOLEAN() if you meant "
         . "a live boolean/tracked value\n";
 }
 

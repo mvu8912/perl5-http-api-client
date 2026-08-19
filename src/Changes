@@ -19,6 +19,11 @@
       t/101) - both already correct, matching t/56's existing
       top-level-hash die message; neither combination had direct test
       coverage before
+    + fix: kvp2str_each's two die messages (nested hash, unconvertible
+      reference) interpolated the URI-escaped form of the key instead
+      of the raw key, unlike kvp2json_each's equivalent message. A key
+      containing a space produced a confusing "for key 'my%20key'"
+      instead of "for key 'my key'" (HAC-138, t/102)
 
 2026-08-19 - v1.26
     + fix: kvp2json's and kvp2str's events->{keys} callback had no
