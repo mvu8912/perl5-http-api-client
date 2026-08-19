@@ -13,6 +13,12 @@
       "flag=" (trailing equals, nothing after it). Fixed to default to
       '', matching this codebase's established undef-avoidance
       convention (HAC-135, t/99)
+    + test: coverage added for a hashref dying with a clear "nested
+      hash" message when nested inside an xCSV() list (HAC-136, t/100)
+      and when nested inside a plain non-xCSV ARRAY value (HAC-137,
+      t/101) - both already correct, matching t/56's existing
+      top-level-hash die message; neither combination had direct test
+      coverage before
 
 2026-08-19 - v1.26
     + fix: kvp2json's and kvp2str's events->{keys} callback had no
