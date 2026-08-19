@@ -19,6 +19,14 @@
       re-clamps locally at its own point of use, per HAC-045/t/37).
       $api->retry->{delay} is now clamped to 0 the same way
       $api->retry->{count} already was (HAC-122, t/88)
+    + fix: MANIFEST.SKIP's backup-file line was '\*\~', a regex requiring
+      a literal '*' immediately before the '~' - it never matched an
+      ordinary editor backup filename like "Client.pm~" or "foo.pl~" (the
+      actual Emacs/vim convention), only the essentially impossible
+      "literal asterisk right before a tilde" case. Live-verified: a
+      planted lib/HTTP/API/Client.pm~ shipped straight into the dzil
+      build tarball, unfiltered. Changed the pattern to '~$', which
+      actually matches a trailing tilde (HAC-123, t/89)
 
 2026-08-19 - v1.24
     + docs: added POD ATTRIBUTES entries for "retry" and "debug_flags" -
