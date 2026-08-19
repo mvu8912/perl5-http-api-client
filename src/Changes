@@ -27,6 +27,10 @@
       planted lib/HTTP/API/Client.pm~ shipped straight into the dzil
       build tarball, unfiltered. Changed the pattern to '~$', which
       actually matches a trailing tilde (HAC-123, t/89)
+    + test: coverage added for DEBUG_RESPONSE_HEADER_ONLY (previously
+      untested anywhere - already correct, this closes the gap, HAC-124,
+      t/90) and for kvp2str_each's plain-ARRAY branch filtering out a
+      nested empty arrayref element (already correct, HAC-125, t/91)
 
 2026-08-19 - v1.24
     + docs: added POD ATTRIBUTES entries for "retry" and "debug_flags" -
