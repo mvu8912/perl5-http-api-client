@@ -40,6 +40,11 @@
       early return (a real response with an empty body, distinct from
       t/09's earlier "no response at all" guard - already correct,
       HAC-127, t/92)
+    + test: coverage added for _tune_utf8()'s silent-swallow-on-unrelated-
+      error path (only "content must be bytes" gets re-encoded; any other
+      error passes content through unchanged - already correct, tested
+      via the same monkeypatch/white-box approach t/26 already
+      established, HAC-128, t/93)
 
 2026-08-19 - v1.24
     + docs: added POD ATTRIBUTES entries for "retry" and "debug_flags" -
