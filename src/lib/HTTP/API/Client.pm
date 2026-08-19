@@ -362,8 +362,11 @@ C<< '' => undef >> entry.
 
 Builds the L<HTTP::Request> for one call. This is where the C<%events>
 callbacks passed to C<send()> are read: C<before_headers>, C<headers_keys> /
-C<add_headers_keys> (which header keys to consider, in what order),
-C<before_header>/C<after_header> keyed by header name, and
+C<add_headers_keys> (which header keys to consider, in what order - both
+paths' return value is deduplicated, first occurrence wins, order
+otherwise preserved, not sorted; without that, a repeated key from either
+would fire C<before_header>/C<after_header> once per repeat instead of
+once, HAC-130), C<before_header>/C<after_header> keyed by header name, and
 C<after_header_keys> - the hooks used to compute things like a signature
 header from other data at build time. See F<t/04_callbacks.t> for a worked
 example (API key + signature).
@@ -1113,7 +1116,8 @@ sub new_request {
     my @keys;
 
     if (my $keys = $events->{headers_keys}) {
-        @keys = $self->$keys(%o);
+        my %seen;
+        @keys = grep { !$seen{$_}++ } $self->$keys(%o);
     }
     elsif (my $add = $events->{add_headers_keys}) {
         my %seen;

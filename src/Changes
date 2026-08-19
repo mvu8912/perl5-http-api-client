@@ -8,6 +8,11 @@
       rather than an intentional multi-value array. Deduplicated
       (first occurrence wins, order otherwise preserved, not sorted) in
       both encoders (HAC-129, t/94)
+    + fix: same bug class as HAC-129, in new_request()'s headers_keys
+      callback (a full override of which header keys to consider,
+      similar to kvp2json's/kvp2str's events->{keys}) - a duplicate key
+      silently double-fired before_header/after_header for that key.
+      Deduplicated the same order-preserving way (HAC-130, t/95)
 
 2026-08-19 - v1.25
     + fix: send()'s DEBUG_IN_OUT/DEBUG_SEND_OUT "-- REQUEST --" dump printed
