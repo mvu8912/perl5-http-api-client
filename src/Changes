@@ -1,3 +1,18 @@
+2026-08-19 - v1.21
+    + fix: kvp2json/kvp2json_each silently emitted invalid JSON for a
+      string data value that Scalar::Util::looks_like_number() recognizes
+      as a non-finite number - exact casings "NaN", "Inf", "-Inf" (whose
+      Perl NV-to-string roundtrip matches the original string
+      byte-for-byte, satisfying the existing lossless-numify check meant
+      for ordinary numeric strings like "5") were numified into a real
+      Perl NaN/Infinity NV, which this module's utf8-mode JSON::XS
+      encoder then wrote as the bareword token nan/-nan/inf/-inf instead
+      of a quoted string - not valid JSON, undecodable by any standard
+      JSON parser including JSON::XS itself, with no error or warning.
+      _numify_if_lossless() now leaves such a value as its original
+      string via a POSIX::isnan/isinf guard, the same way any other
+      non-lossless numeric string already stays a string (HAC-095)
+
 2026-08-19 - v1.20
     + fix: prepare_request() unconditionally wrote an Authorization
       header from auth_token whenever set (and username/password

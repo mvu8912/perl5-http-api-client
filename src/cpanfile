@@ -6,6 +6,7 @@ requires "JSON::XS";
 requires "LWP::Protocol::https";
 requires "LWP::UserAgent";
 requires "Moo";
+requires "POSIX";
 requires "Try::Tiny";
 requires "URI";
 requires "URI::Escape";

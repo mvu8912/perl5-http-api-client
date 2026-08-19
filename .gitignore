@@ -12,3 +12,4 @@ HTTP-API-Client-*
 .env
 .tira/
 cover_db/
+CLAUDE.md

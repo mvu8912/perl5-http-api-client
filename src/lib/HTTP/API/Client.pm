@@ -413,9 +413,14 @@ number rather than a quoted string - but only when doing so loses
 nothing (stringifying the number back reproduces the original value
 exactly). A value like C<"5"> becomes C<5>, but C<"00501"> (a US zip
 code) or C<"5.0"> stays a string, since numifying either would silently
-discard meaningful formatting. C<kvp2str> never numifies at all - a
-query string has no separate number/string type, so there was never a
-reason to risk altering the original representation.
+discard meaningful formatting. A value like C<"NaN">, C<"Inf">, or
+C<"-Inf"> also stays a string even though it round-trips losslessly as
+a Perl number - JSON has no valid representation for a non-finite
+number, and numifying it would make C<kvp2json> emit the bareword
+C<nan>/C<inf>/C<-inf>, which is not valid JSON and no parser (including
+this module's own JSON::XS) can decode. C<kvp2str> never numifies at
+all - a query string has no separate number/string type, so there was
+never a reason to risk altering the original representation.
 
 =head2 kvp2json_each(%options) / kvp2str_each(%options)
 
@@ -528,6 +533,7 @@ use Try::Tiny;
 use URI;
 use URI::Escape qw( uri_escape uri_unescape );
 use Scalar::Util qw( looks_like_number );
+use POSIX qw( isnan isinf );
 use HTTP::API::DataTypeMarker;
 
 extends 'Exporter';
@@ -1133,6 +1139,11 @@ sub _json_validate_utf8 {
 sub _numify_if_lossless {
     my ($v) = @_;
     return $v if !looks_like_number($v);
+    # NaN/Infinity have no valid JSON representation - JSON::XS's utf8-mode
+    # encoder emits them as the bareword nan/inf/-inf, which is not valid
+    # JSON. Leave the original string untouched rather than numifying into
+    # a token no JSON parser (including JSON::XS itself) can decode.
+    return $v if isnan($v + 0) || isinf($v + 0);
     # Compare against a throwaway stringified copy, not $v+0 itself - comparing
     # a number with eq caches a string form on that same scalar (SvPOK), and
     # JSON::XS then encodes it as a JSON string instead of a JSON number.
