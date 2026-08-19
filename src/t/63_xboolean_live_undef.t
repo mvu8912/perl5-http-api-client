@@ -5,9 +5,13 @@ a spurious "Use of uninitialized value" warning when a live
 xBOOLEAN(\$var) reference currently holds undef - _uri_escape_bytes_or_chars
 was handed undef directly, and the result was interpolated into the
 output string without ever being defaulted. kvp2json_each already
-handled the identical input silently (encodes it as JSON null).
-kvp2str_each now defaults an undef live value to '' before escaping,
-matching the scalar branch's existing undef-handling convention.
+handled the identical input silently, encoding it as an empty string
+(not JSON null - HAC-134 corrected this comment, which claimed null,
+after live-verifying the actual output is C<{"flag":""}>; kvp2json_each's
+C<_defor($_, '')>/C<_defor($inner, '')> convention converts undef to an
+empty string throughout the function, never to JSON null). kvp2str_each
+now defaults an undef live value to '' before escaping, matching the
+scalar branch's existing undef-handling convention.
 
 =cut
 
@@ -30,5 +34,8 @@ my $var;
     ok !( grep { /uninitialized/ } @warnings ),
         "no uninitialized-value warning for a live BOOL ref currently holding undef";
 }
+
+is $api->kvp2json( data => { flag => xBOOLEAN( \$var ) }, events => {} ), '{"flag":""}',
+    "kvp2json encodes the same undef live BOOL as an empty string, not JSON null";
 
 done_testing;

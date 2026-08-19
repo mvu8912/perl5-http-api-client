@@ -1,3 +1,12 @@
+2026-08-19 - v1.27
+    + docs: t/63_xboolean_live_undef.t's own POD comment inaccurately
+      claimed kvp2json_each encodes an undef live BOOL value as JSON
+      null - live-verified the actual output is an empty string
+      ({"flag":""}), matching kvp2json_each's consistent
+      undef-to-empty-string convention throughout the function. No
+      production code change - corrected the comment and added the
+      missing direct assertion (HAC-134)
+
 2026-08-19 - v1.26
     + fix: kvp2json's and kvp2str's events->{keys} callback had no
       deduplication of its return value, unlike new_request()'s
