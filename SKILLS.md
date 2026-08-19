@@ -35,6 +35,8 @@ PERL5LIB="lib:$PERL5LIB" cover
 
 **Prepend to `PERL5LIB`, never overwrite it.** This machine has more than one Devel::Cover install; overwriting `PERL5LIB` for the `prove` step makes it write the coverage DB with a different Devel::Cover than `cover` reads it back with, and the DB becomes unreadable (Sereal header errors). `cover_db/` is a generated artifact - never commit it, it's gitignored.
 
+**A test that spawns a `perl` subprocess must clear `PERL5OPT` in the child's environment first, if the run might be under coverage.** `PERL5OPT=-MDevel::Cover` is inherited by any child process a test forks via backticks/`system`/`open(..., "-|")` - that child then writes to the *same* `cover_db/` concurrently with the parent `prove` process, and the result was an actually-corrupted DB (`File is not a perl storable`, not just wrong numbers) the next time `cover` tried to read it. Hit this building t/83 (HAC-110), which spawns several `perl` invocations to test behavior across different `PERL_HASH_SEED` values - fixed with `local $ENV{PERL5OPT} = '';` around each spawn.
+
 Threshold is 75% statement coverage on `lib/`, tracked in README.md's Coverage section alongside the actual current baseline.
 
 ## Cutting a release
