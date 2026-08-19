@@ -1,3 +1,19 @@
+2026-08-19 - v1.22
+    + fix: kvp2str_each silently stringified a bare (not xBOOLEAN-wrapped)
+      SCALAR ref data value as "SCALAR(0x...)" instead of dying - the
+      same silent-corruption failure class HAC-020 (nested hash) and
+      HAC-093 (xBOOLEAN's own non-scalar-ref guard) already established
+      this project must never do. kvp2json_each's equivalent fallback
+      technically died too, but only by accident of JSON::XS itself
+      refusing to encode an arbitrary scalar ref, with a message that
+      never mentioned this module's own xBOOLEAN() vocabulary. Both
+      encoders now die with the same clear message, naming the ref
+      type and pointing at xBOOLEAN() (HAC-096)
+    + test: added regression coverage for new_request()'s GET branch
+      when the target URL already contains a '?' - the behavior was
+      already correct but had zero test executions before this
+      (HAC-097)
+
 2026-08-19 - v1.21
     + fix: kvp2json/kvp2json_each silently emitted invalid JSON for a
       string data value that Scalar::Util::looks_like_number() recognizes

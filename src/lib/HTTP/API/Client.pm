@@ -446,6 +446,16 @@ unchanged. Second, a plain hash value recurses in C<kvp2json_each> (JSON
 has a native object type for it) but dies in C<kvp2str_each> - a query
 string has no standard convention for representing a nested hash.
 
+Both die - with the same message, naming the offending ref type and
+pointing at C<xBOOLEAN()> - on any other reference type neither of them
+otherwise recognizes, most commonly a bare (not C<xBOOLEAN>-wrapped)
+scalar ref: a value like C<< \$flag >> passed directly, typically from
+forgetting to call C<xBOOLEAN(\$flag)> around it. Before this die was
+added, C<kvp2str_each> silently stringified such a value as
+C<SCALAR(0x...)>, and C<kvp2json_each> reached the same outcome only by
+accident of JSON::XS itself refusing to encode an arbitrary scalar ref
+- with a message that never mentioned this module's own vocabulary.
+
 C<kvp2str_each>'s C<%options> also accepts C<no_key>, set internally when
 recursing into an ARRAY or C<xCSV> element: when true, the returned
 fragment omits the leading C<key=> prefix (a plain scalar, C<xCSV>, and
@@ -1243,6 +1253,10 @@ sub kvp2json_each {
         return \%parts;
     }
 
+    die "Unable to convert a " . ref($v) . " reference into JSON for key '"
+        . _defor( $o{key}, '' ) . "' - wrap it in xBOOLEAN() if you meant a "
+        . "live boolean/tracked value\n" if ref $v;
+
     return $v;
 }
 
@@ -1349,6 +1363,10 @@ sub kvp2str_each {
     elsif (UNIVERSAL::isa($v, 'HASH')) {
         die "Unable to convert nested hash value for key '$k' into a form-urlencoded query string";
     }
+
+    die "Unable to convert a " . ref($v) . " reference into a form-urlencoded "
+        . "query string value for key '$k' - wrap it in xBOOLEAN() if you meant "
+        . "a live boolean/tracked value\n" if ref $v;
 
     return $v;
 }
