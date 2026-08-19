@@ -1,3 +1,22 @@
+2026-08-19 - v1.23
+    + cleanup: removed the trailing "return $v" (and its now-redundant
+      "if ref $v" guard) from kvp2json_each and kvp2str_each - a direct
+      follow-up to HAC-096's die guard, which left both lines provably
+      unreachable (every non-reference value already returns earlier,
+      and any remaining reference is now always caught by the die).
+      Zero behavior change; confirmed by an identical full-suite run
+      before and after, and by Devel::Cover no longer listing either
+      line as permanently-0%-executed dead weight (HAC-098)
+    + test: added regression coverage for send()'s "-- RETRY N of M"
+      debug line, only reachable when a debug flag is on AND an actual
+      retry attempt happens - no existing test combined both. Already
+      correct behavior; Client.pm now reaches 100% statement coverage
+      (HAC-099)
+    + test: added regression coverage for new_request() skipping
+      _tune_utf8 when charset is not "utf8" - already correct behavior,
+      never exercised through a real send()/post() call before this
+      (HAC-100)
+
 2026-08-19 - v1.22
     + fix: kvp2str_each silently stringified a bare (not xBOOLEAN-wrapped)
       SCALAR ref data value as "SCALAR(0x...)" instead of dying - the

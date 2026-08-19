@@ -1255,9 +1255,7 @@ sub kvp2json_each {
 
     die "Unable to convert a " . ref($v) . " reference into JSON for key '"
         . _defor( $o{key}, '' ) . "' - wrap it in xBOOLEAN() if you meant a "
-        . "live boolean/tracked value\n" if ref $v;
-
-    return $v;
+        . "live boolean/tracked value\n";
 }
 
 sub kvp2str {
@@ -1366,9 +1364,7 @@ sub kvp2str_each {
 
     die "Unable to convert a " . ref($v) . " reference into a form-urlencoded "
         . "query string value for key '$k' - wrap it in xBOOLEAN() if you meant "
-        . "a live boolean/tracked value\n" if ref $v;
-
-    return $v;
+        . "a live boolean/tracked value\n";
 }
 
 sub basic_authenticator {
