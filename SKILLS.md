@@ -61,7 +61,7 @@ DZIL_CONFIRMRELEASE_DEFAULT=yes dzil release
 
 **On this project, a ticket in the `release` column is itself the release authorization** - once cards are there, cut the release (build → test → source-only/META check → `dzil release` → tag → push → move tickets to `done`) without stopping to ask again first; Michael said so explicitly (2026-08-18) after being asked three separate times. This is specific to this project, not a general default - it doesn't relax anything else (still never force-push, still never touch files Michael has concurrently open without checking).
 
-The PAUSE user `MICVU` indexing-permission blocker from 2016-2021 releases (tracked as `HAC-003`) was resolved by Michael on 2026-08-17; every release since (v1.05 through v1.23, as of 2026-08-19) has shipped and indexed cleanly.
+The PAUSE user `MICVU` indexing-permission blocker from 2016-2021 releases (tracked as `HAC-003`) was resolved by Michael on 2026-08-17; every release since (v1.05 through v1.24, as of 2026-08-19) has shipped and indexed cleanly.
 
 ## The Tira board
 
