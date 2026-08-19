@@ -36,6 +36,10 @@
       (which send() always calls fresh) - removed the now-unreachable
       line; t/37's end-to-end negative-RETRY_DELAY regression still
       passes, now exercised via _build_retry's clamp alone (HAC-126)
+    + test: coverage added for kvp_response()'s empty-decoded_content
+      early return (a real response with an empty body, distinct from
+      t/09's earlier "no response at all" guard - already correct,
+      HAC-127, t/92)
 
 2026-08-19 - v1.24
     + docs: added POD ATTRIBUTES entries for "retry" and "debug_flags" -
