@@ -1,3 +1,14 @@
+2026-08-19 - v1.26
+    + fix: kvp2json's and kvp2str's events->{keys} callback had no
+      deduplication of its return value, unlike new_request()'s
+      add_headers_keys path (HAC-022). A duplicate key caused a CODE
+      value at that key to be invoked once per occurrence instead of
+      once - side effects fired multiple times, and kvp2str produced a
+      genuinely malformed doubled-key output ("a=computed-1&a=computed-2")
+      rather than an intentional multi-value array. Deduplicated
+      (first occurrence wins, order otherwise preserved, not sorted) in
+      both encoders (HAC-129, t/94)
+
 2026-08-19 - v1.25
     + fix: send()'s DEBUG_IN_OUT/DEBUG_SEND_OUT "-- REQUEST --" dump printed
       $response->request->as_string instead of the $req object it actually

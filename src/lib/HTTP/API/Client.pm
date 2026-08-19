@@ -441,7 +441,12 @@ empty value) rather than being omitted - there is no join-corruption
 risk to avoid the way there is for a nested empty array, and C<key=> is
 valid, parseable form data distinct from the key being absent.
 Both respect an C<< $events->{keys} >> callback to control which keys are
-included and in what order, and both accept a C<skip_key> hashref in
+included and in what order - its return value is deduplicated (first
+occurrence wins, order otherwise preserved, not sorted) before use, so a
+repeated key is processed once rather than once per occurrence; without
+that, a C<CODE> value at that key would fire once per repeat and
+C<kvp2str> would emit the same key twice with two different computed
+values (HAC-129). Both also accept a C<skip_key> hashref in
 C<%options> (same reachability caveat as C<new_request()>'s
 C<skip_headers> above - only useful from a direct call, e.g. a C<data>
 callback recursively re-invoking C<kvp2str()>/C<kvp2json()> on itself to
@@ -1258,7 +1263,8 @@ sub kvp2json {
     my @keys;
 
     if (my $do = $events->{keys}) {
-        @keys = $self->$do(%o);
+        my %seen;
+        @keys = grep { !$seen{$_}++ } $self->$do(%o);
     }
     else {
         @keys = keys %$data;
@@ -1338,7 +1344,8 @@ sub kvp2str {
     }
 
     if (my $do = $events->{keys}) {
-        @keys = $self->$do(%o);
+        my %seen;
+        @keys = grep { !$seen{$_}++ } $self->$do(%o);
     }
     else {
         @keys = sort @keys;
