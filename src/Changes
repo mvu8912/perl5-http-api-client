@@ -6,6 +6,13 @@
       undef-to-empty-string convention throughout the function. No
       production code change - corrected the comment and added the
       missing direct assertion (HAC-134)
+    + fix: kvp_response() decoded a bare key with no '=' at all (e.g.
+      the "flag" segment in "flag&a=1" - valid form-urlencoded syntax
+      for a present-but-empty flag) to undef instead of an empty
+      string, inconsistent with every other decoded value including
+      "flag=" (trailing equals, nothing after it). Fixed to default to
+      '', matching this codebase's established undef-avoidance
+      convention (HAC-135, t/99)
 
 2026-08-19 - v1.26
     + fix: kvp2json's and kvp2str's events->{keys} callback had no

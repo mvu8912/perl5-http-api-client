@@ -356,7 +356,11 @@ decodes to C<+>) - this matters for a response body from any API, not
 just one built by this module's own C<kvp2str_each>, which never emits a
 raw C<+> itself. An empty C<&>-separated segment (a leading, trailing,
 or doubled C<&>) is skipped rather than decoded into a bogus
-C<< '' => undef >> entry.
+C<< '' => undef >> entry. A bare key with no C<=> at all (e.g. the
+C<flag> segment in C<flag&a=1> - valid C<application/x-www-form-urlencoded>
+syntax for a present-but-empty flag) decodes to an empty string, the same
+as C<flag=> with a trailing C<=> and nothing after it - not C<undef>
+(HAC-135).
 
 =head2 new_request(%options)
 
@@ -1049,6 +1053,7 @@ sub kvp_response {
     for my $pair ( split /&/, $content ) {
         next if $pair eq '';
         my ( $k, $v ) = map { ( my $s = $_ ) =~ tr/+/ /; uri_unescape($s) } split /=/, $pair, 2;
+        $v = '' unless defined $v;
         if ( exists $data{$k} ) {
             $data{$k} = [ $data{$k} ] unless ref $data{$k} eq 'ARRAY';
             push @{ $data{$k} }, $v;
