@@ -70,7 +70,10 @@ A plain scalar is copied at call time, the same as C<xCSV>'s values -
 C<xBOOLEAN($flag)> then reassigning C<$flag> does not change what was
 already captured. Pass a scalar ref instead (C<xBOOLEAN(\$flag)>) to opt
 into tracking C<$flag> live - the marker then always reflects whatever
-C<$flag> currently holds when it's later read.
+C<$flag> currently holds when it's later read. Only a plain scalar or a
+scalar ref is accepted - wrapping anything else (an arrayref, a
+hashref) dies with a clear message when the marker is later encoded,
+rather than silently stringifying it.
 
 =head2 xTRUE / xFALSE
 

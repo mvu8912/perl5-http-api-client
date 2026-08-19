@@ -2,11 +2,14 @@
 
 45_partial_retry_config.t - HAC-062: a partial retry_config hashref (only
 some of fail_response/fail_status/delay set) left the omitted keys undef
-instead of falling back to the documented defaults - fail_response's
-undef then hit send()'s own _defor($self->retry->{count}, 1) fallback,
-silently turning the documented "default 0 retries" into 1 retry, and
-fail_status's undef produced a spurious "Use of uninitialized value" warning
-from split() in _build_retry.
+instead of falling back to the documented defaults, silently turning the
+documented "default 0 retries" into 1 retry wherever that undef count
+was consumed, and fail_status's undef produced a spurious "Use of
+uninitialized value" warning from split() in _build_retry. This test
+exercises _build_retry's own defaulting logic via the (HAC-088: no
+longer live - see its own comment in the source) retry attribute
+accessor; send()'s actual live behavior on every call is covered
+separately by t/51_retry_config_change_after_first_use.t.
 
 =cut
 

@@ -259,6 +259,8 @@ RETRY VARIABLES
                         A negative value is clamped to 0 (no retry) rather than silently
                         making zero attempts.
  RETRY_FAIL_STATUS    - only retry if specified status code. e.g. 500,404
+                        An empty entry (a doubled comma, stray whitespace) is
+                        skipped rather than becoming a bogus always-false entry.
  RETRY_DELAY          - retry with wait time of 5 seconds in between, by default. A negative
                         value is clamped to 0 rather than reaching sleep() as-is.
 
@@ -277,6 +279,12 @@ if configured. C<%data> and C<%headers> are merged over C<pre_defined_data>
 and C<pre_defined_headers>. C<%events> are the per-call callbacks documented
 under C<new_request()> below. Sets and returns the C<last_response>
 attribute.
+
+None of C<\%data>/C<\%headers>/C<\%events> are mutated - C<send()> copies
+each before doing anything with it, so a hashref you pass in (and may
+reuse across other calls) comes back exactly as you passed it, with no
+merged-in C<pre_defined_*> keys or event-hook keys added by C<send()>'s
+own machinery.
 
 Passing C<< $events->{test_request_object} = 1 >> makes it return the built
 L<HTTP::Request> instead of sending it - the way this module's own test
@@ -348,7 +356,10 @@ applies authentication: C<username>/C<password> take priority and are sent
 as HTTP Basic auth via C<basic_authenticator()>; C<auth_token> is used only
 if neither is set, and is sent as a raw C<Authorization> header value
 verbatim (no C<Bearer> prefix is added for you - include it in the token
-itself if the API expects one). Called by C<new_request()> - there is
+itself if the API expects one). C<auth_token> only supplies a I<default>
+C<Authorization> header - an explicit one already present in C<%headers>
+for this call (any casing: C<Authorization>, C<authorization>, ...) is
+left alone rather than overwritten. Called by C<new_request()> - there is
 normally no need to call this directly.
 
 =head2 basic_authenticator($request, $username, $password)
@@ -372,7 +383,11 @@ An empty arrayref value is omitted from C<kvp2str>'s output entirely (an
 empty array has no C<key=value> representation), the same as a key
 mapped to C<undef>/missing already is - including an empty array nested
 inside an C<xCSV(...)> list, which contributes nothing to the joined
-string rather than leaving a blank comma segment behind.
+string rather than leaving a blank comma segment behind. An C<xCSV()>
+with no elements at all is different: it still emits C<key=> (present,
+empty value) rather than being omitted - there is no join-corruption
+risk to avoid the way there is for a nested empty array, and C<key=> is
+valid, parseable form data distinct from the key being absent.
 Both respect an C<< $events->{keys} >> callback to control which keys are
 included and in what order, and both accept a C<skip_key> hashref in
 C<%options> (same reachability caveat as C<new_request()>'s
@@ -435,11 +450,37 @@ C<key=value> pair.
 
 Both encoders unwrap an C<xBOOLEAN(\$flag)> live scalar ref to whatever
 C<$flag> currently holds, not just the C<0>/C<1> case C<xTRUE>/C<xFALSE>
-use - a live ref that currently holds exactly C<0> or C<1> still becomes
-a native JSON boolean in C<kvp2json_each> (matching C<xTRUE>/C<xFALSE>),
-but any other live value encodes as its own actual contents in both
-encoders alike, the same way a plain (non-live) C<xBOOLEAN> value
-already did.
+use - a live ref that currently holds exactly (C<eq>, not merely
+numerically C<==>) the string C<0> or C<1> still becomes a native JSON
+boolean in C<kvp2json_each> (matching C<xTRUE>/C<xFALSE>; JSON::XS's own
+convention only accepts that exact canonical form, not e.g. C<"01"> or
+C<"1.0">), but any other live value - including one that is numerically
+equal to C<0>/C<1> without being formatted exactly that way - encodes as
+its own actual contents in both encoders alike, the same way a plain
+(non-live) C<xBOOLEAN> value already did - including
+C<kvp2json_each>'s invalid-UTF-8 die documented above, which a live
+non-canonical value goes through exactly like the plain-scalar case
+does. A live value that currently holds C<undef> is treated as an
+empty string in both encoders, not C<undef> itself - it never reaches
+the invalid-UTF-8 check (an empty string is trivially valid UTF-8) and
+encodes as C<""> in JSON, matching how C<kvp2str_each> already handled
+this case.
+
+A plain (non-live) C<xBOOLEAN> value - anything other than the
+C<\1>/C<\0> shape C<xTRUE>/C<xFALSE> use, including a value passed to
+C<xBOOLEAN()> directly with no leading backslash - goes through the
+exact same invalid-UTF-8 die and lossless-numify treatment in
+C<kvp2json_each> as the plain scalar branch: C<xBOOLEAN("5")> encodes as
+the JSON number C<5>, and invalid UTF-8 bytes die with the same message
+rather than silently corrupting into JSON, just like a plain scalar
+value with the identical content would.
+
+C<xBOOLEAN()> only accepts a plain scalar or a scalar ref - wrapping
+anything else (an arrayref, a hashref) dies with a clear message naming
+the offending ref type in both encoders, rather than silently
+stringifying it (e.g. into C<"HASH(0x...)">) the way an unmarked
+reference of the wrong shape does elsewhere in this module (see
+C<kvp2str_each>'s nested-hash die, above).
 
 =head1 LICENSE AND COPYRIGHT
 
@@ -626,6 +667,12 @@ sub _build_ssl_verify {
     return _defor( $ENV{SSL_VERIFY}, 0 );
 }
 
+# send() does NOT read this attribute - since HAC-068 it calls
+# $self->_build_retry directly on every call, so retry_config changes
+# take effect live. This accessor is kept only for external callers who
+# already read $api->retry directly; it's a one-time snapshot at
+# whatever moment it's first accessed, not a live view of send()'s
+# actual behavior.
 has retry => (
     is      => "rw",
     lazy    => 1,
@@ -637,7 +684,10 @@ sub _build_retry {
     my %retry  = %{ _defor($self->retry_config, {}) };
     my $count  = _defor( $retry{fail_response}, 0 );
     $count = 0 if looks_like_number($count) && $count < 0;
-    my %status = map { s/^\s+|\s+$//g; $_ => 1 } split /,/, _defor($retry{fail_status}, '');
+    my %status = map { $_ => 1 }
+        grep { length }
+        map { s/^\s+|\s+$//g; $_ }
+        split /,/, _defor($retry{fail_status}, '');
 
     my $delay = _defor( $retry{delay}, 5 );
 
@@ -771,9 +821,9 @@ sub send {
 
     $method  = uc $method;
     $path    = _defor( $path,    '' );
-    $data    = _defor( $data,    {} );
-    $headers = _defor( $headers, {} );
-    $events  = _defor( $events,  {} );
+    $data    = { %{ _defor( $data,    {} ) } };
+    $headers = { %{ _defor( $headers, {} ) } };
+    $events  = { %{ _defor( $events,  {} ) } };
 
     my $base_url     = $self->base_url;
     my $url          = $base_url ? $base_url . $path : $path;
@@ -832,7 +882,9 @@ sub send {
             die "Unsupported engine: $eng - only LWP::UserAgent is currently wired up in send()";
         }
 
-        if ( $debug{in_out} || $debug{send_out} ) {
+        my $suppress_on_success = $debug{response_if_fail} && $response->is_success;
+
+        if ( $debug{send_out} || ( $debug{in_out} && !$suppress_on_success ) ) {
             print STDERR "-- REQUEST --\n";
             if ( $retry_count && $retry ) {
                 print STDERR "-- RETRY $retry of $retry_count\n";
@@ -844,7 +896,7 @@ sub send {
         my $debug_response = _defor($debug{in_out}, $debug{response});
 
         $debug_response = 0
-          if $debug{response_if_fail} && $response->is_success;
+          if $suppress_on_success;
 
         if ($debug_response) {
             my $used_time = time - $started_time;
@@ -1027,7 +1079,8 @@ sub prepare_request {
             _encode_if_utf8_flagged($u), _encode_if_utf8_flagged($p) );
     }
     elsif ($at) {
-        $headers->{authorization} = $at;
+        $headers->{authorization} = $at
+            unless grep { lc($_) eq 'authorization' } keys %$headers;
     }
 
     return $request;
@@ -1064,6 +1117,17 @@ sub _encode_if_utf8_flagged {
 sub _uri_escape_bytes_or_chars {
     my ($v) = @_;
     return uri_escape( _encode_if_utf8_flagged($v) );
+}
+
+sub _json_validate_utf8 {
+    my ($v) = @_;
+    return $v if utf8::is_utf8($v);
+    my $decoded = eval { Encode::decode( utf8 => $v, Encode::FB_CROAK ) };
+    die sprintf(
+        "kvp2json_each: value is not valid UTF-8, refusing to silently corrupt it into JSON (raw bytes: %v02x)\n",
+        $v
+    ) if !defined $decoded;
+    return $decoded;
 }
 
 sub _numify_if_lossless {
@@ -1134,24 +1198,20 @@ sub kvp2json_each {
     }
 
     if (!ref $v) {
-        if (!utf8::is_utf8($v)) {
-            my $decoded = eval { Encode::decode( utf8 => $v, Encode::FB_CROAK ) };
-            die sprintf(
-                "kvp2json_each: value is not valid UTF-8, refusing to silently corrupt it into JSON (raw bytes: %v02x)\n",
-                $v
-            ) if !defined $decoded;
-            $v = $decoded;
-        }
-        return _numify_if_lossless($v);
+        return _numify_if_lossless( _json_validate_utf8($v) );
     }
     elsif (ref $v eq 'BOOL') {
         my $inner = $v->[0];
-        if ( ref $inner eq 'SCALAR'
-            && !( looks_like_number($$inner) && ( $$inner == 0 || $$inner == 1 ) ) )
-        {
-            return _numify_if_lossless($$inner);
+        if ( ref $inner eq 'SCALAR' ) {
+            my $live_value = _defor( $$inner, '' );
+            if ( !( $live_value eq '0' || $live_value eq '1' ) ) {
+                return _numify_if_lossless( _json_validate_utf8($live_value) );
+            }
+            return $inner;
         }
-        return $inner;
+        die "xBOOLEAN() only accepts a plain scalar or a scalar ref, not a "
+            . ref($inner) . " ref\n" if ref $inner;
+        return _numify_if_lossless( _json_validate_utf8( _defor( $inner, '' ) ) );
     }
     elsif (UNIVERSAL::isa($v, 'ARRAY')) {
         my @parts;
@@ -1231,7 +1291,10 @@ sub kvp2str_each {
         }
     }
     elsif (ref $v eq 'BOOL') {
-        my $bool_value = ref $v->[0] eq 'SCALAR' ? ${$v->[0]} : $v->[0];
+        my $inner = $v->[0];
+        die "xBOOLEAN() only accepts a plain scalar or a scalar ref, not a "
+            . ref($inner) . " ref\n" if ref $inner && ref $inner ne 'SCALAR';
+        my $bool_value = ref $inner eq 'SCALAR' ? $$inner : $inner;
         my $escaped = _uri_escape_bytes_or_chars( _defor($bool_value, '') );
         return $o{no_key} ? $escaped : "$k=$escaped";
     }

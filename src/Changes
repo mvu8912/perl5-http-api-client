@@ -1,3 +1,97 @@
+2026-08-19 - v1.20
+    + fix: prepare_request() unconditionally wrote an Authorization
+      header from auth_token whenever set (and username/password
+      weren't), even when the caller had already explicitly passed
+      their own Authorization header (any casing) for that specific
+      call - the explicit per-call value was silently discarded with no
+      error or warning, reachable regardless of the header's casing
+      since HTTP::Headers normalizes names case-insensitively while the
+      underlying Perl hash keys don't. auth_token now only supplies a
+      default when no Authorization header is already present (HAC-094)
+    + fix: xBOOLEAN() wrapping a reference other than a scalar ref (an
+      ARRAY or HASH ref) silently stringified to "ARRAY(0x...)"/
+      "HASH(0x...)" in both kvp2json_each and kvp2str_each instead of
+      dying with a clear message - the same failure class HAC-020
+      already established this project must never do silently. Both
+      encoders now die naming the offending ref type; a plain scalar
+      and a genuine scalar ref (xBOOLEAN's two documented input shapes)
+      are unaffected (HAC-093)
+    + fix: kvp2json_each's BOOL branch applied HAC-055/HAC-070/HAC-084's
+      invalid-UTF-8-die and lossless-numify protection only to the LIVE
+      scalar-ref case (xBOOLEAN(\$var)) - a PLAIN (non-ref) value, e.g.
+      xBOOLEAN($value) called with a bare scalar, fell straight through
+      to the raw unprotected value. A plain xBOOLEAN() holding invalid
+      UTF-8 silently produced mojibake instead of dying, and a plain
+      numeric-looking xBOOLEAN() value was never numified. Both are
+      fully public, documented input shapes per xBOOLEAN's own POD ("a
+      plain scalar or a scalar ref") - the same gap HAC-084 fixed for
+      the live-ref case, missed for the plain-value case. The
+      native-JSON-boolean behavior for a live ref holding exactly
+      '0'/'1' (xTRUE/xFALSE's shape) is unaffected (HAC-092)
+    + fix: kvp2json_each's BOOL branch decided whether to pass a live
+      xBOOLEAN(\$var) scalar ref through unchanged to JSON::XS using
+      NUMERIC equality ($$inner == 0 || == 1), but JSON::XS itself only
+      accepts the exact canonical string/number 0 or 1. A live ref
+      holding "01", "1.0", " 1", or "1e0" (all numerically 1, none
+      canonically formatted) crashed with JSON::XS's raw "cannot encode
+      reference to scalar ... unless the scalar is 0 or 1" instead of
+      going through the numify/validate path every other live value
+      already uses. Fixed by comparing with eq against '0'/'1' instead
+      of == (HAC-090)
+    + fix: kvp2json_each crashed on a live xBOOLEAN(\$var) reference
+      holding undef - a regression introduced by HAC-084/HAC-090
+      combining without an undef guard: $$inner eq '0'/'1' warned on
+      undef, and since neither matched, the undef value reached
+      _json_validate_utf8()/numify unguarded and died with a confusing
+      "value is not valid UTF-8" error. Now defaults the live value to
+      '' before the comparison, matching kvp2str_each's own undef
+      handling (HAC-082) (HAC-091)
+    + fix: send() merged pre_defined_data/pre_defined_headers/
+      pre_defined_events directly into the caller's own
+      \%data/\%headers/\%events hashrefs instead of copying them first,
+      and new_request()/kvp2json()/kvp2str() autovivified
+      before_header/after_header/not_include keys into the caller's
+      actual \%events hashref even when never set. A caller reusing a
+      hashref across multiple calls (a natural pattern) got silently
+      corrupted state back. send() now shallow-copies all three
+      immediately, before any merging or event processing happens
+      (HAC-083)
+    + fix: kvp2json_each's BOOL branch bypassed HAC-055's invalid-UTF-8
+      protection for a live xBOOLEAN(\$var) reference holding raw
+      non-UTF8-valid bytes - it went straight to numification without
+      the UTF-8 validate-or-die step the main scalar branch does,
+      silently producing mojibake instead of dying with a clear error.
+      Both paths now share a _json_validate_utf8() helper (HAC-084)
+    + fix: DEBUG_RESPONSE_IF_FAIL's own POD says it narrows DEBUG_IN_OUT
+      to only print on a failed response, but only the RESPONSE half of
+      DEBUG_IN_OUT's output was actually narrowed - the REQUEST dump
+      printed unconditionally whenever DEBUG_IN_OUT was set, regardless
+      of whether the response succeeded. DEBUG_SEND_OUT (a separate
+      flag, not mentioned in DEBUG_RESPONSE_IF_FAIL's POD) is
+      deliberately left unnarrowed (HAC-085)
+    + fix: RETRY_FAIL_STATUS (and the equivalent retry_config->{
+      fail_status}) with an empty or whitespace-only entry (a doubled
+      comma, a lone whitespace segment) created a bogus '' key in the
+      retry-status match set. Harmless in practice, but inconsistent
+      with how empty segments are now skipped elsewhere in this module
+      (kvp_response, HAC-075). Empty entries are now skipped entirely
+      (HAC-086)
+    + test: xCSV() with zero elements emits "key=" (present, empty
+      value) rather than being omitted like a top-level empty plain
+      array is (HAC-065) - this was correct and intentional (no
+      join-corruption risk to avoid the way a nested empty array has)
+      but previously undocumented and untested (HAC-087)
+    + docs: the retry attribute (and its _build_retry builder) has been
+      disconnected from send()'s actual behavior since HAC-068 - send()
+      calls _build_retry directly on every call rather than reading the
+      memoized attribute, so retry_config changes take effect live, but
+      $api->retry itself is just a one-time snapshot. Added a code
+      comment to prevent this being mistaken for dead/reintroducible
+      logic (HAC-088)
+    + docs: refreshed README's coverage baseline, stale since v1.15 -
+      Client.pm 98.9%/93.1%/80.9% (was 98.8%/92.8%/76.6%),
+      DataTypeMarker.pm still 100% (HAC-089)
+
 2026-08-18 - v1.19
     + fix: kvp2str_each's BOOL branch produced a spurious "Use of
       uninitialized value" warning when a live xBOOLEAN(\$var) reference
