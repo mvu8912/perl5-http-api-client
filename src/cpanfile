@@ -15,6 +15,10 @@ requires "Scalar::Util";
 on 'test' => sub {
     requires "HTTP::Request";
     requires "HTTP::Response";
+    requires "MIME::Base64";
+    requires "Test::More";
+    requires "FindBin";
+    requires "File::Temp";
 };
 
 on 'develop' => sub {

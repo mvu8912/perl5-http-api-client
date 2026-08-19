@@ -9,6 +9,7 @@ perltidy.ERR
 .cpanm
 tools/init.log
 HTTP-API-Client-*
+.build/
 .env
 .tira/
 cover_db/
