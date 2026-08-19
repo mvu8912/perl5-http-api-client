@@ -11,6 +11,14 @@
       a redirect. Fixed by hoisting $req to be captured once built and using
       it directly for the REQUEST dump; the RESPONSE dump is unaffected, it
       correctly reflects the final response as received (HAC-121, t/87)
+    + fix: _build_retry() clamped a negative retry count to 0 but had no
+      equivalent clamp for a negative delay, so the public "retry"
+      attribute (kept specifically for external callers who read
+      $api->retry directly) exposed an unclamped negative delay even
+      though send() itself never actually sleeps a negative amount (it
+      re-clamps locally at its own point of use, per HAC-045/t/37).
+      $api->retry->{delay} is now clamped to 0 the same way
+      $api->retry->{count} already was (HAC-122, t/88)
 
 2026-08-19 - v1.24
     + docs: added POD ATTRIBUTES entries for "retry" and "debug_flags" -

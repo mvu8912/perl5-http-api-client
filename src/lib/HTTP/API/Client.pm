@@ -764,6 +764,7 @@ sub _build_retry {
         split /,/, _defor($retry{fail_status}, '');
 
     my $delay = _defor( $retry{delay}, 5 );
+    $delay = 0 if looks_like_number($delay) && $delay < 0;
 
     return {
         count  => $count,
